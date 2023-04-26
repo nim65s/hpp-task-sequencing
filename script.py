@@ -31,3 +31,4 @@ s.solver.addConstraint('driller/drill_tip pregrasps part/handle_6', 1)
 q = q1 + q2
 
 s.solver.setRightHandSideFromVector(q)
+res, q3, err = s.solver.solve(q)

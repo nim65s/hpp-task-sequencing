@@ -149,7 +149,7 @@ void MultiRobotSolver::rightHandSideFromConfig(const Configuration_t q)
 bool MultiRobotSolver::solve(vectorOut_t q, vectorOut_t error)
 {
   hpp::constraints::solver::HierarchicalIterative::Status status
-    (solver_.solve<hpp::constraints::solver::lineSearch::ErrorNormBased>
+    (solver_.solve<hpp::constraints::solver::lineSearch::Backtracking>
      (q));
   solver_.residualError(error);
   return (status == hpp::constraints::solver::HierarchicalIterative::SUCCESS);
