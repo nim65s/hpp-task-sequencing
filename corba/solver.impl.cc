@@ -53,7 +53,7 @@ DevicePtr_t Solver::getRobotOrThrow()
   return robot;
 }
 
-Solver::Solver() : solver_(LiegroupSpace::empty(), 0), server_(0x0) {}
+Solver::Solver() : solver_(), server_(0x0) {}
 
 hpp::core::ProblemSolverPtr_t Solver::problemSolver()
 {
@@ -64,7 +64,7 @@ void Solver::create(const CORBA::ULong nbInstances)
 {
   try{
     DevicePtr_t robot(getRobotOrThrow());
-    solver_ = MultiRobotSolver(robot->configSpace(), nbInstances);
+    solver_ = MultiRobotSolver(robot, nbInstances);
   } catch(const std::exception& exc) {
     throw Error(exc.what());
   }

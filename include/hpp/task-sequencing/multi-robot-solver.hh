@@ -62,10 +62,12 @@ ExplicitPtr_t applyOnOneRobotInstance(const ExplicitPtr_t& constraint,
 class MultiRobotSolver{
 public:
   /// Constructor
-  /// \param configSpace configuration space of a single robot
+  /// Create empty solver.
+  MultiRobotSolver();
+  /// Constructor
+  /// \param robot instance of single robot,
   /// \param nRobots, number of robot instances
-  MultiRobotSolver(const LiegroupSpaceConstPtr_t configSpace,
-                   size_type nRobots);
+  MultiRobotSolver(const DevicePtr_t robot, size_type nRobots);
   /// Set error threshold
   void errorThreshold(const double& threshold);
   /// Set maximal number of iterations

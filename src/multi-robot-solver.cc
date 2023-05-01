@@ -26,12 +26,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 // DAMAGE.
 
+#include <hpp/util/debug.hh>
 #include <hpp/task-sequencing/multi-robot-solver.hh>
 
-#include <hpp/pinocchio/liegroup-space.hh>
+#include <pinocchio/multibody/model.hpp>
+
+#include <hpp/pinocchio/device.hh>
+#include <hpp/pinocchio/joint-collection.hh>
 
 #include <hpp/constraints/function/of-parameter-subset.hh>
 #include <hpp/constraints/affine-function.hh>
+#include <hpp/pinocchio/configuration.hh>
 
 namespace hpp{
 namespace task_sequencing{
@@ -70,10 +75,44 @@ static LiegroupSpacePtr_t buildConfigSpace(
   }
   return res;
 }
-MultiRobotSolver::MultiRobotSolver(const LiegroupSpaceConstPtr_t configSpace,
+MultiRobotSolver::MultiRobotSolver(const DevicePtr_t robot,
                                    size_type nRobots) :
-  singleRobotConfigSpace_(configSpace), nInstances_(nRobots),
-  solver_(buildConfigSpace(configSpace, nRobots))
+  singleRobotConfigSpace_(robot->configSpace()), nInstances_(nRobots),
+  solver_(buildConfigSpace(robot->configSpace(), nRobots))
+{
+  // Set saturation instance for the solver
+  size_type iq=0, iv=0,
+    nq = robot->configSpace()->nq(),
+    nv = robot->configSpace()->nv();
+  vector_t lb, ub;
+  lb.resize(nRobots * nq); ub.resize(nRobots * nq);
+  Eigen::VectorXi iq2iv; iq2iv.resize(nRobots * nq);
+
+  const pinocchio::Model& m = robot->model();
+  for (size_type i=0; i < nRobots; ++i){
+    lb.segment(iq, nq) = m.lowerPositionLimit;
+    ub.segment(iq, nq) = m.upperPositionLimit;
+    for (std::size_t j = 1; j < m.joints.size(); ++j) {
+      const size_type nq_j = m.joints[j].nq();
+      const size_type nv_j = m.joints[j].nv();
+      const size_type idx_q = m.joints[j].idx_q();
+      const size_type idx_v = m.joints[j].idx_v();
+      for (size_type k = 0; k < nq_j; ++k) {
+        const size_type iq_j = idx_q + k;
+        const size_type iv_j = idx_v + std::min(k, nv_j - 1);
+        iq2iv[iq + iq_j] = (int)(iv + iv_j);
+      }
+    }
+    iq += nq;
+    iv += nv;
+  }
+  solver_.saturation(std::make_shared<constraints::solver::saturation::Bounds>
+                     (lb, ub, iq2iv));
+}
+
+MultiRobotSolver::MultiRobotSolver() :
+  singleRobotConfigSpace_(LiegroupSpace::empty()), nInstances_(0),
+  solver_(LiegroupSpace::empty())
 {
 }
 
