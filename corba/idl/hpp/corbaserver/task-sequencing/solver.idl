@@ -80,6 +80,12 @@ module hpp {
                       out floatSeq residualError) raises(Error);
         /// Print the solver in a string
         void display(out string solver) raises(Error);
+	/// test isodata
+	/// \param dataFilename file containing the data points,
+	/// \param paramFilename file containing the parameters of the algorithm,
+	/// \param resultFilename file where the results are written.
+	void testIsoData(in string dataFilename, in string paramFilename, in string resultFilename)
+	  raises(Error);
       };
     }; // interface Solver
   }; // module task_sequencing

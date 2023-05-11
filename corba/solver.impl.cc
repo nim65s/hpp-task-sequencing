@@ -29,6 +29,7 @@
 #include <../corba/solver.impl.hh>
 #include <../corba/task-sequencing.hh>
 
+#include <../src/isodata/isodata.h>
 #include <hpp/pinocchio/device.hh>
 #include <hpp/pinocchio/liegroup-space.hh>
 
@@ -43,6 +44,7 @@ namespace impl {
 using corbaServer::floatSeqToConfig;
 using corbaServer::floatSeqToVector;
 using corbaServer::vectorToFloatSeq;
+using corbaServer::matrixToFloatSeqSeq;
 
 DevicePtr_t Solver::getRobotOrThrow()
 {
@@ -157,6 +159,28 @@ void Solver::display(CORBA::String_out solver)
     oss << (solver_);
     solver = oss.str().c_str();
   } catch (const std::exception& exc) {
+    throw Error(exc.what());
+  }
+}
+
+void Solver::testIsoData(const char* dataFilename, const char* paramFilename,
+	   const char* resultFilename)
+{
+  try{
+    std::cout << "test IsoData" << std::endl;
+    isodata isodataTest(dataFilename, paramFilename, resultFilename);
+  } catch(const std::exception& exc){
+    throw Error(exc.what());
+  }
+}
+
+void Solver::testIsodata(Eigen::MatrixXd points, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns, const char* resultPath)
+{
+  try{
+    // Eigen::MatrixXd points = read_data(argv[1], samples, sampleSize);
+    isodata isodataTest(points, c, nc, tn, te, tc, nt, ns, resultPath);
+    isodataTest.runWPoints();
+  } catch(const std::exception& exc){
     throw Error(exc.what());
   }
 }

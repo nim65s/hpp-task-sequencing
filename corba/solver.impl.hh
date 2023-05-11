@@ -54,7 +54,8 @@ public:
                      hpp::floatSeq_out error);
   virtual void setRightHandSideFromVector(const hpp::floatSeq& input);
   virtual void display(CORBA::String_out solver);
-
+  virtual void testIsoData(const char* dataFilename, const char* paramFilename,
+			   const char* resultFilename);
 private:
   core::ProblemSolverPtr_t problemSolver();
   DevicePtr_t getRobotOrThrow();
