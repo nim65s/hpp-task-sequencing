@@ -163,23 +163,29 @@ void Solver::display(CORBA::String_out solver)
   }
 }
 
-void Solver::testIsoData(const char* dataFilename, const char* paramFilename,
-	   const char* resultFilename)
+void Solver::testIsoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
+			 CORBA::Long nbCols, CORBA::ULong c, CORBA::ULong nc, CORBA::ULong tn,
+			 CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
+			 hpp::corbaserver::task_sequencing::Clusters_out result)
 {
   try{
-    std::cout << "test IsoData" << std::endl;
-    isodata isodataTest(dataFilename, paramFilename, resultFilename);
-  } catch(const std::exception& exc){
-    throw Error(exc.what());
-  }
-}
-
-void Solver::testIsodata(Eigen::MatrixXd points, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns, const char* resultPath)
-{
-  try{
-    // Eigen::MatrixXd points = read_data(argv[1], samples, sampleSize);
-    isodata isodataTest(points, c, nc, tn, te, tc, nt, ns, resultPath);
-    isodataTest.runWPoints();
+    using hpp::corbaserver::task_sequencing::Clusters;
+    // using the clustering algorithm
+    isodata isodataTest(hpp::corbaServer::floatSeqSeqToMatrix(points), nbRows, nbCols, c, nc, tn, te, tc, nt, ns);
+    std::vector<ResultCluster> res = isodataTest.run();
+    // storing the returned result in a sequence
+    std::size_t size = res.size();
+    hpp::corbaserver::task_sequencing::Cluster *clusters = Clusters::allocbuf((CORBA::ULong)size);
+    Clusters* tmp = new Clusters((CORBA::ULong)size, (CORBA::ULong)size, clusters, true);
+    result = tmp;
+    for (std::size_t i=0; i<size;++i){
+      Eigen::VectorXd c = res[i].centroid;
+      Eigen::MatrixXd p = res[i].points;
+      hpp::corbaserver::task_sequencing::Cluster element;
+      element.centroid = *corbaServer::vectorToFloatSeq(c);
+      element.points = *corbaServer::matrixToFloatSeqSeq(p);
+      clusters[i] = element;
+    }
   } catch(const std::exception& exc){
     throw Error(exc.what());
   }

@@ -34,6 +34,12 @@
 module hpp {
   module corbaserver {
     module task_sequencing {
+      struct Cluster {
+	floatSeq centroid;
+	floatSeqSeq points;
+      };
+      typedef sequence <Cluster> Clusters;
+
       interface Solver {
         /// Create a solver for several instances of the current robot
         ///
@@ -80,11 +86,23 @@ module hpp {
                       out floatSeq residualError) raises(Error);
         /// Print the solver in a string
         void display(out string solver) raises(Error);
+
 	/// test isodata
-	/// \param dataFilename file containing the data points,
-	/// \param paramFilename file containing the parameters of the algorithm,
-	/// \param resultFilename file where the results are written.
-	void testIsoData(in string dataFilename, in string paramFilename, in string resultFilename)
+	/// \param points matrix of the coordinates of the points to be clustered
+	/// \param nbRows the nb of points
+	/// \param nbCols the nb of coordinates of a point
+	/// \param c expected nb of clusters
+	/// \param nc initial nb of clusters
+	/// \param tn min size of a cluster
+	/// \param te max variance of a cluster
+	/// \param tc min distance between centroids
+	/// \param nt max nb of merges per iteration
+	/// \param ns max nb of iterations
+	/// \retval result clusters obtained after applying the algorithm
+	void testIsoData(in floatSeqSeq points, in long nbRows, in long nbCols,
+			 in unsigned long c, in unsigned long nc, in unsigned long tn,
+			 in double te, in double tc, in unsigned long nt, in unsigned long ns,
+			 out Clusters result)
 	  raises(Error);
       };
     }; // interface Solver

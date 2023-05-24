@@ -35,6 +35,8 @@ namespace hpp{
 namespace task_sequencing{
 
 typedef pinocchio::Configuration_t Configuration_t;
+typedef pinocchio::vector3_t vector3_t;
+typedef pinocchio::matrix3_t matrix3_t;
 typedef pinocchio::vector_t vector_t;
 typedef pinocchio::vectorIn_t vectorIn_t;
 typedef pinocchio::vectorOut_t vectorOut_t;

@@ -42,17 +42,16 @@ vector<vector<double>> read_data(const char* filePath)
 /**
  * function read_data to personalize above
  */
-int main(int argc, char* argv[]) { // args : dataFile, paramFile, resultFile
-  if (argc!=4){
-    cout << "Not enough arguments (data, parameters and result files required)" << endl;
-  }
-  else{
-    CMyTimeWrapper c;
-    c.tic();
-    isodata isodata1(read_data, argv[1], argv[2], argv[3]);
-    isodata1.run();
-    c.tocMs();
-  }
+int main(int argc, char* argv[]) { // args : dataFile
+  // TO RUN WITH POINTS
+  int samples, sampleSize;
+  Eigen::MatrixXd points = read_data(argv[1], samples, sampleSize);
+  isodata isodata2(points, samples, sampleSize, 4, 90, 10, 90, 20, 5, 500);
+  std::vector<ResultCluster> res = isodata2.runWPoints();
+  std::cout << "nb clusters : " << res.size() << std::endl;
+  std::cout << "cluster 1 \nsize : " << res[0].points.rows() << std::endl;
+  std::cout << "centroid :\n " << res[0].centroid << std::endl;
+  // std::cout << "points " << res[0].points << std::endl;
   return 0;
 }
 
