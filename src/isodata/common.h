@@ -33,8 +33,8 @@ inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2) /
   else
     {
       // l2 distance between the origins
-      Eigen::Vector4d p1h = p1.head(3);
-      Eigen::Vector4d p2h = p2.head(3);
+      Eigen::Vector3d p1h = p1.head(3);
+      Eigen::Vector3d p2h = p2.head(3);
       double res = (p2h-p1h).norm();
       // squared inner prod of the quaternions
       Eigen::Vector4d p1t = p1.tail(4);
