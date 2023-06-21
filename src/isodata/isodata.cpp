@@ -18,7 +18,7 @@ void isodata::init_clusters() {
       bool flag = false;
       for (auto &item : ids)
         {
-	  if (get_distance(data.row(item), data.row(id)) == 0.0)
+	  if (get_distance(data.row(item), data.row(id), angleInfluence) == 0.0)
 	    flag = true;
         }
       if (!flag)
@@ -36,46 +36,20 @@ void isodata::init_clusters() {
  * @return id of the cluster and distance
  */
 std::pair<int, double> isodata::get_nearest_cluster(int p_index, int ignore = -1) {
-  if (ignore != -1 && clusters.size() == 1)
+  if (ignore != -1 && int(clusters.size()) == 1)
     std::cout << WARN_CLUSTER_SIZE_SMALL << std::endl;
   int c_index = 0;
-  double dis(get_distance(data.row(p_index), clusters[c_index].center));
-  for (int i = 1; i < clusters.size(); ++i) {
+  double dis(get_distance(data.row(p_index), clusters[c_index].center, angleInfluence));
+  for (int i = 1; unsigned(i) < clusters.size(); ++i) {
     if (ignore != -1 && i == ignore)
       continue;
-    auto d = get_distance(data.row(p_index), clusters[i].center);
+    auto d = get_distance(data.row(p_index), clusters[i].center, angleInfluence);
     if (d < dis)
       {
 	dis = d;
 	c_index = i;
       }
   }
-  return {c_index, dis};
-}
-/**
- * looks for the closest centroid to a point to put it in a cluster
- * @param p_index id of the point in the data
- * @param cluster_ids set of ids of the clusters not to be taken into account
- * @return id of the cluster and distance
- */
-std::pair<int, double> isodata::get_nearest_cluster(int p_index, std::unordered_set<unsigned> &cluster_ids) {
-  // select the first cluster that is not in cluster_ids
-  int c_index = 0;
-  while (cluster_ids.find(static_cast<const unsigned int &>(c_index)) != cluster_ids.end())
-    ++c_index;
-  // initial distance
-  double dis(get_distance(data.row(p_index), clusters[c_index].center));
-  for (int i = c_index+1;
-       i < clusters.size() && (cluster_ids.find(static_cast<const unsigned int &>(i)) == cluster_ids.end());
-       ++i)
-    {
-      auto d = get_distance(data.row(p_index), clusters[i].center);
-      if (d < dis)
-        {
-	  dis = d;
-	  c_index = i;
-        }
-    }
   return {c_index, dis};
 }
 
@@ -86,7 +60,7 @@ void isodata::re_assign() {
   for (auto &cluster : clusters) {
     cluster.clear_ids();
   }
-  for (int i = 0; i < row; ++i)
+  for (unsigned i = 0; i < row; ++i)
     {
       auto&& res = get_nearest_cluster(i);
       clusters[res.first].add_point(i);
@@ -95,20 +69,12 @@ void isodata::re_assign() {
 
 // tests if there are less than tn points in a cluster
 // if it is the case, the cluster is deleted
-void isodata::check_tn() {
-  std::unordered_set<unsigned> to_erase;
-  for (int i = 0; i < clusters.size(); ++i) {
-    if (clusters[i].ids.size() >= _tn)
-      continue;
-    to_erase.emplace(i);
-    auto &indexs = clusters[i].ids;
-    for (unsigned int index : indexs)
-      {
-	auto &&res = get_nearest_cluster(index, to_erase);
-	clusters[res.first].add_point(index);
-      }
-    clusters[i].ids.clear();
-
+void isodata::check_tn(bool& flag) {
+  for (unsigned i = 0; i < clusters.size(); ++i) {
+    if (clusters[i].ids.size() < _tn){
+      clusters[i].ids.clear();
+      flag = true;
+    }
   }
   for (auto it = clusters.begin(); it != clusters.end();)
     {
@@ -153,6 +119,7 @@ void isodata::update_sigma(Cluster& cluster) {
   for (auto& id : cluster.ids) {
     sum += Eigen::pow(cluster.center - data(id), 2);
   }
+  sum /= static_cast<double>(cluster.ids.size());
   cluster.sigma = Eigen::sqrt(sum);
 }
 
@@ -162,49 +129,12 @@ void isodata::update_meandis() {
   for (auto &&cluster : clusters) {
     double dis(0.0);
     for (auto &id : cluster.ids) {
-      dis += get_distance(data.row(id), cluster.center);
+      dis += get_distance(data.row(id), cluster.center, angleInfluence);
     }
     Cluster::allMeanDis += dis;
-    cluster.innerMeanDis = dis/cluster.ids.size();
+    cluster.innerMeanDis = dis/double(cluster.ids.size());
   }
   Cluster::allMeanDis /= row;
-}
-
-
-// checks if a cluster has to be split
-// if it is the case, the splitting is done
-void isodata::check_split() {
-  update_sigmas();
-  while (true)
-    {
-      bool flag = false;
-      for (unsigned j = 0; j < clusters.size(); ++j) {
-	auto& cluster = clusters[j];
-	for (int i = 0; i < col; ++i)
-	  {
-	    if (cluster.innerMeanDis > Cluster::allMeanDis)
-	      {
-		if (cluster.sigma[i] > _te && (cluster.ids.size() > 2 * _tn + 1 || clusters.size() < _c / 2))
-		  {
-		    flag = true;
-		    split(j);
-		  }
-	      }
-	    else
-	      {
-		if (cluster.sigma[i] > _te && clusters.size() < _c / 2)
-		  {
-		    flag = true;
-		    split(j);
-		  }
-	      }
-	  }
-      }
-      if (!flag)
-	break;
-      else
-	update_meandis();
-    }
 }
 
 // splits cluster c_index
@@ -214,15 +144,15 @@ void isodata::split(const int &c_index) {
   // retrieving the index of the biggest variance
   EIGEN_DEFAULT_DENSE_INDEX_TYPE iter;
   cluster.sigma.maxCoeff(&iter);
-  int pos(iter); // converting it to an int
+  long int pos(iter); // converting it to an int
   Cluster newcluster(cluster.center);
   // splitting
   newcluster.center[pos] -= alpha*cluster.center[pos];
   cluster.center[pos] += alpha*cluster.center[pos];
   for (const auto &id : cluster.ids)
     {
-      auto d1 = get_distance(data.row(id), cluster.center);
-      auto d2 = get_distance(data.row(id), newcluster.center);
+      auto d1 = get_distance(data.row(id), cluster.center, angleInfluence);
+      auto d2 = get_distance(data.row(id), newcluster.center, angleInfluence);
       if (d2 < d1)
 	newcluster.ids.emplace(id);
     }
@@ -244,11 +174,12 @@ void isodata::split(const int &c_index) {
 void isodata::check_merge() {
   // personalized data type
   typedef std::pair<std::pair<unsigned, unsigned>, double> UNIT;
-  //1 computation of the distance between two centers, keeping those closer than tc and ordering by ascending distance
+  //1 computation of the distance between two centers, keeping those closer than tc
+  //  and ordering by ascending distance
   std::vector<UNIT> uvec;
   for (unsigned i = 0; i < clusters.size(); ++i) {
     for (unsigned j = i+1; j < clusters.size(); ++j) {
-      auto dis = get_distance(clusters[i].center, clusters[j].center);
+      auto dis = get_distance(clusters[i].center, clusters[j].center, angleInfluence);
       if (dis < _tc)
 	uvec.emplace_back(UNIT({i,j}, dis));
     }
@@ -259,16 +190,17 @@ void isodata::check_merge() {
   unsigned cnt(0);
   for (const auto &unit : uvec) {
     auto& cids = unit.first;
-    auto& cdis = unit.second;
+    // auto& cdis = unit.second;
     if (clusterIds.find(cids.first) == clusterIds.end() &&
 	clusterIds.find(cids.second) == clusterIds.end())
       {
 	merge(cids.first, cids.second);
 	clusterIds.emplace(cids.first);
 	clusterIds.emplace(cids.second);
+	++cnt;
       }
     // detects exceeding of max nb of mergings 
-    if (++cnt > _ns)
+    if (cnt > _ns)
       break;
   }
   //3 clear the merged clusters
@@ -285,23 +217,9 @@ void isodata::check_merge() {
 void isodata::merge(const int &id1, const int &id2) {
   auto &c1 = clusters[id1];
   auto &c2 = clusters[id2];
-  c1.center = (c1.center* c1.ids.size() + c2.center*c2.ids.size())/(c1.ids.size()+c2.ids.size());
+  c1.center = (c1.center*c1.ids.size() + c2.center*c2.ids.size())/(c1.ids.size()+c2.ids.size());
+  c1.ids.insert(c2.ids.begin(), c2.ids.end());
   c2.ids.clear();
-}
-
-// select the next appropriate operation
-void isodata::switch_method(const int& index) {
-  if (index == _ns-1)
-    {
-      _tc = 0;
-      check_merge();
-    }
-  else if (clusters.size() <= _c/2)
-      check_split();
-  else if (index % 2 == 0 || clusters.size() >= 2*_c)
-      check_merge();
-  else
-      check_split();
 }
 
 // writes the clusters into a vector
@@ -316,7 +234,7 @@ std::vector<ResultCluster> isodata::resultFormatting() const{
       resCls.points.resize((*clsIt).ids.size(), col);
       int i = 0;
       for (std::unordered_set<unsigned>::const_iterator it=(*clsIt).ids.begin(); it!=(*clsIt).ids.end(); ++it){
-	for (int j=0; j<col; j++)
+	for (unsigned j=0; j<col; j++)
 	  resCls.points(i,j) = data(*it,j);
 	i++;
       }

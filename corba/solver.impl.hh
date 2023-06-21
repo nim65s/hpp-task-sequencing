@@ -57,6 +57,7 @@ public:
   virtual void testIsoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
 			   CORBA::Long nbCols, CORBA::ULong c, CORBA::ULong nc, CORBA::ULong tn,
 			   CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
+			   CORBA::Double k,
 			   hpp::corbaserver::task_sequencing::Clusters_out result);
 private:
   core::ProblemSolverPtr_t problemSolver();

@@ -102,6 +102,7 @@ module hpp {
 	void testIsoData(in floatSeqSeq points, in long nbRows, in long nbCols,
 			 in unsigned long c, in unsigned long nc, in unsigned long tn,
 			 in double te, in double tc, in unsigned long nt, in unsigned long ns,
+			 in double k,
 			 out Clusters result)
 	  raises(Error);
       };

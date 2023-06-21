@@ -15,9 +15,9 @@ struct Cluster{
   static double allMeanDis; // global mean distance
   Eigen::ArrayXd center; // barycenter
   std::unordered_set<unsigned> ids; // ids of the pointsin the cluster (ids from isodata)
-  Cluster(): center{}, innerMeanDis(0), sigma(Eigen::ArrayXd{}){}
+  explicit Cluster(): innerMeanDis(0), sigma(Eigen::ArrayXd{}), center{} {}
   explicit Cluster(Eigen::ArrayXd c):
-  center(c), innerMeanDis(0), sigma(Eigen::ArrayXd::Zero(c.size())) {}
+  innerMeanDis(0), sigma(Eigen::ArrayXd::Zero(c.size())), center(c) {}
   void add_point(int p_index);
   void clear_ids();
 };

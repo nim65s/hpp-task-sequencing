@@ -166,12 +166,13 @@ void Solver::display(CORBA::String_out solver)
 void Solver::testIsoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
 			 CORBA::Long nbCols, CORBA::ULong c, CORBA::ULong nc, CORBA::ULong tn,
 			 CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
+			 CORBA::Double k,
 			 hpp::corbaserver::task_sequencing::Clusters_out result)
 {
   try{
     using hpp::corbaserver::task_sequencing::Clusters;
     // using the clustering algorithm
-    isodata isodataTest(hpp::corbaServer::floatSeqSeqToMatrix(points), nbRows, nbCols, c, nc, tn, te, tc, nt, ns);
+    isodata isodataTest(hpp::corbaServer::floatSeqSeqToMatrix(points), nbRows, nbCols, c, nc, tn, te, tc, nt, ns, k);
     std::vector<ResultCluster> res = isodataTest.run();
     // storing the returned result in a sequence
     std::size_t size = res.size();

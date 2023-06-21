@@ -24,7 +24,7 @@
 // }
 
 // hole distance
-inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2) // add 'double k' for hole distance
+inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2, const double k) // add 'double k' for hole distance
 {
   if (p1.size() != 7 || p2.size() != 7) {
     std::cout << WARN_VECTOR_SIZE << std::endl;
@@ -39,7 +39,8 @@ inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2) /
       // squared inner prod of the quaternions
       Eigen::Vector4d p1t = p1.tail(4);
       Eigen::Vector4d p2t = p2.tail(4);
-      res = res * (1 + pow(p1t.dot(p2t),2)); // k*pow(p1t.dot(p2t),2) for hole distance
+      // res = res * (1 + pow(p1t.dot(p2t),2));
+      res = res * (1 + k*pow(p1t.dot(p2t),2)); // for hole distance
       return res;
     }
 }

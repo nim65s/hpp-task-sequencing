@@ -34,6 +34,7 @@ private:
   unsigned col; // nb of features
   Eigen::MatrixXd data; // data to be classified
   std::deque<Cluster> clusters;
+  double angleInfluence;
   double alpha; // splitting factor
 public:
   /**
@@ -43,39 +44,75 @@ public:
    * @param paramPath file to read the parameters from
    * @param resultPath file to write the results in
    */
-  explicit isodata(Eigen::MatrixXd points, int NbRows, int NbCols, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns) :
-    _c(c), _nc(nc), _tn(tn), _te(te), _tc(tc), _nt(nt), _ns(ns), row(NbRows), col(NbCols), data(points), alpha(0.3) {}
+  explicit isodata(Eigen::MatrixXd points, int NbRows, int NbCols, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns, double k=1.) :
+    _c(c), _nc(nc), _tn(tn), _te(te), _tc(tc), _nt(nt), _ns(ns), row(NbRows), col(NbCols), data(points), angleInfluence(k), alpha(0.3) {}
 
 
   std::vector<ResultCluster> run()
   {
+    unsigned iter = 0;
+    bool end = false;
     init_clusters();
-    for (int iter = 0; iter < _ns; ++iter) {
-      re_assign();
-      check_tn();
-      update_centers();
-      update_meandis();
-      switch_method(iter);
-    }
+    while (iter<_ns && !end)
+      {
+	bool deletion = false;
+	bool split_flag = false;
+	// allocation
+	++iter;
+	re_assign();
+	check_tn(deletion);
+	update_centers();
+	if (!deletion)
+	  {
+	    update_meandis();
+	    if (iter==_ns){
+	      _tc = 0;
+	      end = true;
+	    }
+	    else if (2*clusters.size()>_nc && (iter%2==0 || clusters.size()>=2*_nc))
+	      end = true;
+	    if (!end)
+	      {
+		// splitting
+		update_sigmas();
+		for (unsigned i=0; i<clusters.size(); ++i)
+		  {
+		    // retrieving the index of the biggest variance
+		    EIGEN_DEFAULT_DENSE_INDEX_TYPE iter;
+		    clusters[i].sigma.maxCoeff(&iter);
+		    long int sigmaMaxIdx(iter);
+		    if (clusters[i].sigma[sigmaMaxIdx]>_te && ((clusters[i].innerMeanDis>Cluster::allMeanDis && clusters[i].ids.size()>2*(_tn+1)) || 2*clusters.size()<=_nc)){
+		      split(i);
+		      split_flag = true;
+		    }
+		  }
+	      }
+	    if (!split_flag)
+	      {
+		// combining
+		update_meandis();
+		check_merge();
+	      }
+	  }
+	if (iter<_ns)
+	  end = false;
+      }
     return resultFormatting();
   }
 
 private:
   void init_clusters();
   std::pair<int, double> get_nearest_cluster(int p_index, int ignore);
-  std::pair<int, double> get_nearest_cluster(int p_index, std::unordered_set<unsigned>&);
   void re_assign();
-  void check_tn();
+  void check_tn(bool& flag);
   void update_centers();
   void update_center(Cluster& cluster);
   void update_sigmas();
   void update_sigma(Cluster& cluster);
   void update_meandis();
-  void check_split();
   void split(const int& c_index);
   void check_merge();
   void merge(const int& id1, const int& id2);
-  void switch_method(const int& index);
   std::vector<ResultCluster> resultFormatting() const;
 };
 

@@ -1,5 +1,5 @@
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "cert-err58-cpp"
+// #pragma clang diagnostic push
+// #pragma ide diagnostic ignored "cert-err58-cpp"
 //
 // Created by Jeff on 2019/1/4 0004.
 //
@@ -17,4 +17,4 @@ const std::string WARN_POINT_REPEAT("Index repeat");
 const std::string WARN_CLUSTER_SIZE_SMALL("Cluster size too small");
 #endif //ISODATA_ERROR_H
 
-#pragma clang diagnostic pop
+// #pragma clang diagnostic pop
