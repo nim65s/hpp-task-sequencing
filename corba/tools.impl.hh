@@ -1,5 +1,5 @@
-// Copyright (c) 2023 CNRS
-// Author: Florent Lamiraux
+// Copyright (c) 2023, LAAS-CNRS
+// Authors: Florent Lamiraux
 //
 
 // Redistribution and use in source and binary forms, with or without
@@ -26,30 +26,34 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 // DAMAGE.
 
-#include <../corba/solver.impl.hh>
-#include <../corba/tools.impl.hh>
-#include <hpp/task-sequencing/config.hh>
-#include <hpp/corbaserver/server-plugin.hh>
+#ifndef HPP_TASK_SEQUENCING_CORBA_TOOLS_IMPL_HH
+#define HPP_TASK_SEQUENCING_CORBA_TOOLS_IMPL_HH
 
-namespace hpp{
-namespace task_sequencing{
+#include <corba/tools-idl.hh>
+#include <hpp/core/fwd.hh>
+#include <hpp/task-sequencing/multi-robot-solver.hh>
 
-class HPP_TASK_SEQUENCING_DLLAPI Server : public corbaServer::ServerPlugin
+namespace hpp {
+namespace task_sequencing {
+class Server;
+namespace impl {
+
+class Tools : public virtual POA_hpp::corbaserver::task_sequencing::Tools
 {
 public:
-  Server(corbaServer::Server* parent);
-    ~Server();
-  std::string name() const;
-  core::ProblemSolverPtr_t problemSolver();
-  /// Call hpp::corba::Server <impl::Solver>::startCorbaServer
-  void startCorbaServer(const std::string& contextId,
-                        const std::string& contextKind);
-  ::CORBA::Object_ptr servant(const std::string& name) const;
+  Tools();
+  void setServer(Server* server) { server_ = server; }
+
+  virtual CORBA::Double distanceToMesh(const hpp::floatSeq &q,
+      const CORBA::Double *p, CORBA::Double *closest);
 private:
-  corba::Server<impl::Solver>* solverImpl_;
-  corba::Server<impl::Tools>* toolsImpl_;
-
-}; // class Server
+  core::ProblemSolverPtr_t problemSolver();
+  DevicePtr_t getRobotOrThrow();
+  MultiRobotSolver solver_;
+  Server* server_;
+}; // class Tools
+} // namespace impl
 } // namespace task_sequencing
-} // name hpp
+} // namespace hpp
 
+#endif // HPP_TASK_SEQUENCING_CORBA_TOOLS_IMPL_HH

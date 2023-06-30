@@ -26,30 +26,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 // DAMAGE.
 
-#include <../corba/solver.impl.hh>
-#include <../corba/tools.impl.hh>
-#include <hpp/task-sequencing/config.hh>
-#include <hpp/corbaserver/server-plugin.hh>
+#include <hpp/common.idl>
 
-namespace hpp{
-namespace task_sequencing{
-
-class HPP_TASK_SEQUENCING_DLLAPI Server : public corbaServer::ServerPlugin
-{
-public:
-  Server(corbaServer::Server* parent);
-    ~Server();
-  std::string name() const;
-  core::ProblemSolverPtr_t problemSolver();
-  /// Call hpp::corba::Server <impl::Solver>::startCorbaServer
-  void startCorbaServer(const std::string& contextId,
-                        const std::string& contextKind);
-  ::CORBA::Object_ptr servant(const std::string& name) const;
-private:
-  corba::Server<impl::Solver>* solverImpl_;
-  corba::Server<impl::Tools>* toolsImpl_;
-
-}; // class Server
-} // namespace task_sequencing
-} // name hpp
-
+module hpp {
+  module corbaserver {
+    module task_sequencing {
+      typedef double point3_t[3];
+      interface Tools {
+        /// Compute the distance of point to a mesh
+        /// \param q configuration of the robot that determines the pose of
+        ///        the mesh,
+        /// \param p position of the point,
+        /// \retval closest closest point on the mesh.
+        /// \return distance
+        double distanceToMesh(in floatSeq q, in point3_t p,
+                              out point3_t closest) raises(Error);
+      }; // interface Tools
+    }; // module task_sequencing
+  }; // module corbaServer
+}; // module hpp

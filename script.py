@@ -1,11 +1,11 @@
 # Example script to run in tiago deburring demo.
 
 from hpp.corbaserver import Client, loadServerPlugin
-from hpp.corbaserver.task_sequencing import Client as SolverClient
+from hpp.corbaserver.task_sequencing import Client as TsClient
 
 loadServerPlugin("corbaserver", "task-sequencing.so")
 
-s = SolverClient()
+s = TsClient()
 n=2
 s.solver.create(n)
 s.solver.setErrorThreshold(1e-6)
@@ -32,3 +32,5 @@ q = q1 + q2
 
 s.solver.setRightHandSideFromVector(q)
 res, q3, err = s.solver.solve(q)
+
+dist, closest = s.tools.distanceToMesh(q0, [0,0,0])

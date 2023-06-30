@@ -49,8 +49,10 @@ std::string Server::name() const { return "task-sequencing"; }
 void Server::startCorbaServer(const std::string& contextId,
                               const std::string& contextKind) {
   initializeTplServer(solverImpl_, contextId, contextKind, name(), "solver");
+  initializeTplServer(toolsImpl_, contextId, contextKind, name(), "tools");
 
   solverImpl_->implementation().setServer(this);
+  toolsImpl_->implementation().setServer(this);
 }
 
 hpp::core::ProblemSolverPtr_t Server::problemSolver() {
@@ -59,6 +61,7 @@ hpp::core::ProblemSolverPtr_t Server::problemSolver() {
 
 ::CORBA::Object_ptr Server::servant(const std::string& name) const {
   if (name == "solver") return solverImpl_->implementation()._this();
+  if (name == "tools") return toolsImpl_->implementation()._this();
   throw std::invalid_argument("No servant " + name);
 }
 

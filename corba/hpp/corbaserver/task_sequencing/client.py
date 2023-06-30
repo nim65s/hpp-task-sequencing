@@ -28,7 +28,7 @@
 # DAMAGE.
 
 from hpp.corbaserver.client import Client as _Parent
-from hpp_idl.hpp.corbaserver.task_sequencing import Solver
+from hpp_idl.hpp.corbaserver.task_sequencing import Solver, Tools
 
 
 class Client(_Parent):
@@ -38,6 +38,7 @@ class Client(_Parent):
 
     defaultClients = {
         "solver": Solver,
+        "tools": Tools,
     }
 
     def __init__(self, url=None, context="corbaserver"):

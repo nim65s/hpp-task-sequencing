@@ -34,7 +34,7 @@ omniidl_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/idl
                             ${HPP_CORBASERVER_DATAROOTDIR}/idl)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(IDL_SOURCES solver)
+set(IDL_SOURCES solver tools)
 foreach(IDL ${IDL_SOURCES})
   generate_idl_cpp(
     ${IDL}
@@ -77,6 +77,8 @@ hpp_add_server_plugin(
   ${ALL_IDL_CPP_STUBS}
   solver.impl.hh
   solver.impl.cc
+  tools.impl.hh
+  tools.impl.cc
   LINK_DEPENDENCIES PUBLIC
   hpp-corbaserver::hpp-corbaserver
   ${PROJECT_NAME}
