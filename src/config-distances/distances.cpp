@@ -12,65 +12,68 @@ COMPOSITION OF A CONFIGURATION
 24-30 : table+P72 x,y,z,quaternion
  */
 
+namespace hpp{
+namespace task_sequencing{
+
 bool distanceMatrix::baseMoves(int config1, int config2) const
 {
   return (abs(_configurations.row(config2)[0]-_configurations.row(config1)[0])>1.0e-5 || abs(_configurations.row(config2)[1]-_configurations.row(config1)[1])>1.0e-5);
 }
 
-float distanceMatrix::baseL1dist(int config1, int config2) const
+double distanceMatrix::baseL1dist(int config1, int config2) const
 {
   return abs(_configurations.row(config2)[0]-_configurations.row(config1)[0]) + abs(_configurations.row(config2)[1]-_configurations.row(config1)[1]);
 }
 
-float distanceMatrix::maxJointDiff(int config1, int config2) const // most promising
+double distanceMatrix::maxJointDiff(int config1, int config2) const // most promising
 {
-  Eigen::VectorXf c1 = _configurations.row(config1);
-  Eigen::VectorXf c2 = _configurations.row(config2);
-  Eigen::VectorXf joints1 = c1.segment(4,12);
-  Eigen::VectorXf joints2 = c2.segment(4,12);
-  Eigen::ArrayXf diff = joints2-joints1;
-  Eigen::VectorXf coeffs = Eigen::inverse(_jointSpeeds);
-  Eigen::VectorXf movementTimes = Eigen::abs(diff);
+  Eigen::VectorXd c1 = _configurations.row(config1);
+  Eigen::VectorXd c2 = _configurations.row(config2);
+  Eigen::VectorXd joints1 = c1.segment(4,12);
+  Eigen::VectorXd joints2 = c2.segment(4,12);
+  Eigen::ArrayXd diff = joints2-joints1;
+  Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  Eigen::VectorXd movementTimes = Eigen::abs(diff);
   movementTimes = movementTimes*coeffs;
-  return float(movementTimes.lpNorm<Eigen::Infinity>());
+  return double(movementTimes.lpNorm<Eigen::Infinity>());
 }
 
-float distanceMatrix::maxJointDiff(int config) const
+double distanceMatrix::maxJointDiff(int config) const
 {
-  Eigen::VectorXf c1 = _configurations.row(config);
-  Eigen::VectorXf joints0 = _q0.segment(4,12);
-  Eigen::VectorXf joints1 = c1.segment(4,12);
-  Eigen::ArrayXf diff = joints0-joints1;
-  Eigen::VectorXf coeffs = Eigen::inverse(_jointSpeeds);
-  Eigen::VectorXf movementTimes = Eigen::abs(diff);
+  Eigen::VectorXd c1 = _configurations.row(config);
+  Eigen::VectorXd joints0 = _q0.segment(4,12);
+  Eigen::VectorXd joints1 = c1.segment(4,12);
+  Eigen::ArrayXd diff = joints0-joints1;
+  Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  Eigen::VectorXd movementTimes = Eigen::abs(diff);
   movementTimes = movementTimes*coeffs;
-  return float(movementTimes.lpNorm<Eigen::Infinity>());
+  return double(movementTimes.lpNorm<Eigen::Infinity>());
 }
 
-float distanceMatrix::jointL2dist(int config1, int config2) const // another possible distance
+double distanceMatrix::jointL2dist(int config1, int config2) const // another possible distance
 {
-  Eigen::VectorXf c1 = _configurations.row(config1);
-  Eigen::VectorXf c2 = _configurations.row(config2);
-  Eigen::VectorXf joints1 = c1.segment(4,12);
-  Eigen::VectorXf joints2 = c2.segment(4,12);
+  Eigen::VectorXd c1 = _configurations.row(config1);
+  Eigen::VectorXd c2 = _configurations.row(config2);
+  Eigen::VectorXd joints1 = c1.segment(4,12);
+  Eigen::VectorXd joints2 = c2.segment(4,12);
   return (joints2-joints1).norm();
 }
 
-float distanceMatrix::jointL2dist(int config1, int config2, Eigen::VectorXf weights) const // with weights
+double distanceMatrix::jointL2dist(int config1, int config2, Eigen::VectorXd weights) const // with weights
 {
-  Eigen::VectorXf c1 = _configurations.row(config1);
-  Eigen::VectorXf c2 = _configurations.row(config2);
-  Eigen::VectorXf joints1 = c1.segment(4,12);
-  Eigen::VectorXf joints2 = c2.segment(4,12);
-  Eigen::ArrayXf diff = joints2-joints1;
-  Eigen::VectorXf squared = Eigen::abs2(diff);
+  Eigen::VectorXd c1 = _configurations.row(config1);
+  Eigen::VectorXd c2 = _configurations.row(config2);
+  Eigen::VectorXd joints1 = c1.segment(4,12);
+  Eigen::VectorXd joints2 = c2.segment(4,12);
+  Eigen::ArrayXd diff = joints2-joints1;
+  Eigen::VectorXd squared = Eigen::abs2(diff);
   return sqrt(squared.dot(weights));
 }
 
 // to compute the total distance between two configurations
-float distanceMatrix::configDist(int config1, int config2) const
+double distanceMatrix::configDist(int config1, int config2) const
 {
-  float res = 0;
+  double res = 0;
   if (baseMoves(config1, config2)==true) {
     res += baseL1dist(config1, config2);
     res += maxJointDiff(config1);
@@ -99,7 +102,7 @@ void distanceMatrix::computeDistances()
     {
       std::cout << "cluster " << k << std::endl;
       Eigen::VectorXi clus = _clusters.row(k);
-      int clusterSize = clus.size();
+      int clusterSize = int(clus.size());
       while (clus[clusterSize-1]<0)
 	clusterSize-=1;
       std::vector<int> cluster;
@@ -120,7 +123,13 @@ void distanceMatrix::computeDistances()
     }
 }
 
-float distanceMatrix::getDist(int i, int j) const
+double distanceMatrix::getDist(int i, int j) const
 {
   return distances(i,j);
 }
+
+Eigen::MatrixXd distanceMatrix::getMatrix() const {return distances;}
+
+
+} // task_sequencing
+} // hpp

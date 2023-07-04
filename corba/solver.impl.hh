@@ -59,6 +59,12 @@ public:
 			   CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
 			   CORBA::Double k,
 			   hpp::corbaserver::task_sequencing::Clusters_out result);
+  // virtual void computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqSeq& clusters,
+  // 				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
+  // 				hpp::floatSeqSeq_out distances);
+  virtual void computeDistances(const char* configsPath, const hpp::intSeqSeq& clusters,
+				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
+				hpp::floatSeqSeq_out distances);
 private:
   core::ProblemSolverPtr_t problemSolver();
   DevicePtr_t getRobotOrThrow();

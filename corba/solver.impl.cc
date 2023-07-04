@@ -30,6 +30,7 @@
 #include <../corba/task-sequencing.hh>
 
 #include <../src/isodata/isodata.h>
+#include <../src/config-distances/distances.h>
 #include <hpp/pinocchio/device.hh>
 #include <hpp/pinocchio/liegroup-space.hh>
 
@@ -187,6 +188,33 @@ void Solver::testIsoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
       element.points = *corbaServer::matrixToFloatSeqSeq(p);
       clusters[i] = element;
     }
+  } catch(const std::exception& exc){
+    throw Error(exc.what());
+  }
+}
+
+// void Solver::computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqSeq& clusters,
+				// const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
+				// hpp::floatSeqSeq_out distances)
+void Solver::computeDistances(const char* configsPath, const hpp::intSeqSeq& clusters,
+			      const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
+			      hpp::floatSeqSeq_out distances)
+{
+  try{
+    using hpp::corbaserver::task_sequencing::Clusters;
+    // distance matrix computation class
+    distanceMatrix matrix(std::string(configsPath),
+			  hpp::corbaServer::intSeqSeqToMatrix(clusters),
+			  hpp::corbaServer::floatSeqToVector(jointSpeeds),
+			  hpp::corbaServer::floatSeqToVector(q0));
+    // distanceMatrix matrix(hpp::corbaServer::floatSeqSeqToMatrix(configs),
+    // 			  hpp::corbaServer::intSeqSeqToMatrix(clusters),
+    // 			  hpp::corbaServer::floatSeqToVector(jointSpeeds),
+    // 			  hpp::corbaServer::floatSeqToVector(q0));
+    matrix.computeDistances();
+    // storing the distances in a sequence
+    Eigen::MatrixXd distMat = matrix.getMatrix();
+    distances = corbaServer::matrixToFloatSeqSeq(distMat);
   } catch(const std::exception& exc){
     throw Error(exc.what());
   }
