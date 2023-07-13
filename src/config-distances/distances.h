@@ -31,7 +31,6 @@ Eigen::MatrixXd parseConfigurations(std::string filePath)
   Eigen::MatrixXd configurations(nbConfigs, configSize);
   for (int i=0; i<nbConfigs; i++)
     {
-      if (i%100==0) std::cout << "config : " << i << std::endl;
       for (int j=0; j<configSize; j++)
         configurations(i,j) = configs[i][j];
     }
@@ -41,8 +40,8 @@ Eigen::MatrixXd parseConfigurations(std::string filePath)
 class distanceMatrix
 {
   Eigen::MatrixXd _configurations;
-  Eigen::MatrixXi _clusters;
-  Eigen::ArrayXd _jointSpeeds;
+  Eigen::MatrixXd _clusters;
+  Eigen::VectorXd _jointSpeeds; // Eigen::ArrayXd _jointSpeeds;
   Eigen::VectorXd _q0;
   int nbVertices;
   int nbClusters;
@@ -54,17 +53,18 @@ class distanceMatrix
   // {nbVertices = int(_configurations.rows());
   //   nbClusters = int(_clusters.rows());
   //   distances = Eigen::MatrixXd::Zero(nbVertices, nbVertices);}
-  explicit distanceMatrix(std::string configsPath, Eigen::MatrixXi clusters,
+  explicit distanceMatrix(std::string configsPath, Eigen::MatrixXd clusters,
 			  Eigen::VectorXd jointSpeeds, Eigen::VectorXd q0) :
-    _clusters(clusters), _jointSpeeds(Eigen::ArrayXd(jointSpeeds)), _q0(q0)
-  {std::cout << "constructor called" << std::endl;
-    _configurations = parseConfigurations(configsPath);
+    _clusters(clusters), _jointSpeeds(jointSpeeds), //_jointSpeeds(Eigen::ArrayXd(jointSpeeds)),
+    _q0(q0)
+  { _configurations = parseConfigurations(configsPath);
     nbVertices = int(_configurations.rows());
     nbClusters = int(_clusters.rows());
     distances = Eigen::MatrixXd::Zero(nbVertices, nbVertices);}
   void computeDistances();
   double getDist(int i, int j) const;
   Eigen::MatrixXd getMatrix() const;
+  std::string writeDistanceMatrix() const;
  private:
   // base configuration distances
   bool baseMoves(int config1, int config2) const;

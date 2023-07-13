@@ -27,26 +27,34 @@ double distanceMatrix::baseL1dist(int config1, int config2) const
 
 double distanceMatrix::maxJointDiff(int config1, int config2) const // most promising
 {
+  int nbJoints = int(_jointSpeeds.size());
   Eigen::VectorXd c1 = _configurations.row(config1);
   Eigen::VectorXd c2 = _configurations.row(config2);
-  Eigen::VectorXd joints1 = c1.segment(4,12);
-  Eigen::VectorXd joints2 = c2.segment(4,12);
+  Eigen::VectorXd joints1 = c1.segment(4,nbJoints);
+  Eigen::VectorXd joints2 = c2.segment(4,nbJoints);
   Eigen::ArrayXd diff = joints2-joints1;
-  Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  // Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  Eigen::VectorXd coeffs(nbJoints);
+  for (int i=0; i<nbJoints; i++)
+    coeffs[i] = 1/_jointSpeeds[i];
   Eigen::VectorXd movementTimes = Eigen::abs(diff);
-  movementTimes = movementTimes*coeffs;
+  movementTimes = movementTimes.cwiseProduct(coeffs);
   return double(movementTimes.lpNorm<Eigen::Infinity>());
 }
 
 double distanceMatrix::maxJointDiff(int config) const
 {
+  int nbJoints = int(_jointSpeeds.size());
   Eigen::VectorXd c1 = _configurations.row(config);
-  Eigen::VectorXd joints0 = _q0.segment(4,12);
-  Eigen::VectorXd joints1 = c1.segment(4,12);
+  Eigen::VectorXd joints0 = _q0.segment(4,nbJoints);
+  Eigen::VectorXd joints1 = c1.segment(4,nbJoints);
   Eigen::ArrayXd diff = joints0-joints1;
-  Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  // Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  Eigen::VectorXd coeffs(nbJoints);
+  for (int i=0; i<nbJoints; i++)
+    coeffs[i] = 1/_jointSpeeds[i];
   Eigen::VectorXd movementTimes = Eigen::abs(diff);
-  movementTimes = movementTimes*coeffs;
+  movementTimes = movementTimes.cwiseProduct(coeffs);
   return double(movementTimes.lpNorm<Eigen::Infinity>());
 }
 
@@ -91,7 +99,6 @@ void distanceMatrix::computeDistances()
   for (int i=0; i<nbVertices; i++)
     allVertices.emplace(i);
   // all costs to infinity (non existant arcs)
-  std::cout << "to infinity" << std::endl;
   for (int i=0; i<distances.rows(); i++)
     {
       for (int j=0; j<distances.cols(); j++)
@@ -101,7 +108,7 @@ void distanceMatrix::computeDistances()
   for (int k=0; k<nbClusters; k++)
     {
       std::cout << "cluster " << k << std::endl;
-      Eigen::VectorXi clus = _clusters.row(k);
+      Eigen::VectorXd clus = _clusters.row(k);
       int clusterSize = int(clus.size());
       while (clus[clusterSize-1]<0)
 	clusterSize-=1;
@@ -121,6 +128,7 @@ void distanceMatrix::computeDistances()
       distances(cluster[0], cluster[1]) = 0;
       distances(cluster[cluster.size()-1], cluster[0]) = 0;
     }
+  std::cout << "Matrix computed" << std::endl;
 }
 
 double distanceMatrix::getDist(int i, int j) const
@@ -128,8 +136,23 @@ double distanceMatrix::getDist(int i, int j) const
   return distances(i,j);
 }
 
-Eigen::MatrixXd distanceMatrix::getMatrix() const {return distances;}
+Eigen::MatrixXd distanceMatrix::getMatrix() const {
+  std::cout << "trying to return matrix" << std::endl;
+  return distances;
+}
 
+std::string distanceMatrix::writeDistanceMatrix() const {
+  std::string fileLocation  = "/tmp/distanceMatrix.txt";
+  std::ofstream matrixFile(fileLocation);
+  for (int i=0; i<nbVertices; i++)
+    {
+      for (int j=0; j<nbVertices-1; j++)
+	matrixFile << distances(i,j) << ",";
+      matrixFile << distances(i,nbVertices-1) << "\n";
+    }
+  matrixFile.close();
+  return fileLocation;
+}
 
 } // task_sequencing
 } // hpp

@@ -62,14 +62,17 @@ public:
   // virtual void computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqSeq& clusters,
   // 				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
   // 				hpp::floatSeqSeq_out distances);
-  virtual void computeDistances(const char* configsPath, const hpp::intSeqSeq& clusters,
+  virtual void computeDistances(const char* configsPath, const hpp::floatSeqSeq& clusters,
 				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
-				hpp::floatSeqSeq_out distances);
+			        CORBA::String_out location); //hpp::floatSeqSeq_out distances);
+  virtual void setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size);
 private:
   core::ProblemSolverPtr_t problemSolver();
   DevicePtr_t getRobotOrThrow();
   MultiRobotSolver solver_;
   Server* server_;
+  int armFirstIdx;
+  int armSize;
 }; // class Solver
 } // namespace impl
 } // namespace task_sequencing

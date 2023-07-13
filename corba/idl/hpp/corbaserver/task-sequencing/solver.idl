@@ -116,9 +116,12 @@ module hpp {
 	// 		      in floatSeq jointSpeeds, in floatSeq q0,
 	// 		      out floatSeqSeq distances)
 	//   raises(Error);
-	void computeDistances(in string configsPath, in intSeqSeq clusters,
+	void computeDistances(in string configsPath, in floatSeqSeq clusters,
 			      in floatSeq jointSpeeds, in floatSeq q0,
-			      out floatSeqSeq distances)
+			      out string location) //out floatSeqSeq distances)
+	  raises(Error);
+
+	void setRobotArmIndices(in unsigned long start, in unsigned long size)
 	  raises(Error);
       };
     }; // interface Solver
