@@ -34,6 +34,12 @@
 module hpp {
   module corbaserver {
     module task_sequencing {
+      struct Cluster {
+	floatSeq centroid;
+	floatSeqSeq points;
+      };
+      typedef sequence <Cluster> Clusters;
+
       interface Solver {
         /// Create a solver for several instances of the current robot
         ///
@@ -80,6 +86,43 @@ module hpp {
                       out floatSeq residualError) raises(Error);
         /// Print the solver in a string
         void display(out string solver) raises(Error);
+
+	/// test isodata
+	/// \param points matrix of the coordinates of the points to be clustered
+	/// \param nbRows the nb of points
+	/// \param nbCols the nb of coordinates of a point
+	/// \param c expected nb of clusters
+	/// \param nc initial nb of clusters
+	/// \param tn min size of a cluster
+	/// \param te max variance of a cluster
+	/// \param tc min distance between centroids
+	/// \param nt max nb of merges per iteration
+	/// \param ns max nb of iterations
+	/// \param k importance factor of the angle in the task distance measure
+	/// \retval result clusters obtained after applying the algorithm
+	void testIsoData(in floatSeqSeq points, in long nbRows, in long nbCols,
+			 in unsigned long c, in unsigned long nc, in unsigned long tn,
+			 in double te, in double tc, in unsigned long nt, in unsigned long ns,
+			 in double k,
+			 out Clusters result)
+	  raises(Error);
+
+	/// \param configs matrix of the configurations
+	/// \param clusters matrix of the clusters of configurations per handle
+	/// \param jointSpeeds vector of the maximal joint velocities
+	/// \param q0 vector of the rest configuration of the robot
+	/// \retval distances distance matrix for the given configurations
+	// void computeDistances(in floatSeqSeq configs, in intSeqSeq clusters,
+	// 		      in floatSeq jointSpeeds, in floatSeq q0,
+	// 		      out floatSeqSeq distances)
+	//   raises(Error);
+	void computeDistances(in string configsPath, in floatSeqSeq clusters,
+			      in floatSeq jointSpeeds, in floatSeq q0,
+			      out string location) //out floatSeqSeq distances)
+	  raises(Error);
+
+	void setRobotArmIndices(in unsigned long start, in unsigned long size)
+	  raises(Error);
       };
     }; // interface Solver
   }; // module task_sequencing

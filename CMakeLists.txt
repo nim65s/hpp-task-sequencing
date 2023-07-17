@@ -58,7 +58,17 @@ set(${PROJECT_NAME}_HEADERS
   include/hpp/task-sequencing/fwd.hh
   include/hpp/task-sequencing/multi-robot-solver.hh)
 set(${PROJECT_NAME}_SOURCES
-  src/multi-robot-solver.cc)
+  src/multi-robot-solver.cc
+  src/isodata/Cluster.h
+  src/isodata/Cluster.cpp
+  src/isodata/common.h
+  src/isodata/error.h
+  src/isodata/isodata.h
+  src/isodata/isodata.cpp
+  src/isodata/MyTime.h
+  src/config-distances/distances.h
+  src/config-distances/distances.cpp)
+
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES}
                                    ${${PROJECT_NAME}_HEADERS})
 target_link_libraries(${PROJECT_NAME} PUBLIC hpp-constraints::hpp-constraints)
