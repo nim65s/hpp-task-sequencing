@@ -40,25 +40,17 @@ Eigen::MatrixXd parseConfigurations(std::string filePath)
 class distanceMatrix
 {
   Eigen::MatrixXd _configurations;
-  Eigen::MatrixXd _clusters;
+  Eigen::MatrixXi _clusters;
   Eigen::VectorXd _jointSpeeds; // Eigen::ArrayXd _jointSpeeds;
   Eigen::VectorXd _q0;
   int nbVertices;
   int nbClusters;
   Eigen::MatrixXd distances;
  public:
-  // explicit distanceMatrix(Eigen::MatrixXd configurations, Eigen::MatrixXi clusters,
-  // 			  Eigen::VectorXd jointSpeeds, Eigen::VectorXd q0) :
-  //   _configurations(configurations), _clusters(clusters), _jointSpeeds(Eigen::ArrayXd(jointSpeeds)), _q0(q0)
-  // {nbVertices = int(_configurations.rows());
-  //   nbClusters = int(_clusters.rows());
-  //   distances = Eigen::MatrixXd::Zero(nbVertices, nbVertices);}
-  explicit distanceMatrix(std::string configsPath, Eigen::MatrixXd clusters,
+  explicit distanceMatrix(Eigen::MatrixXd configurations, Eigen::MatrixXi clusters,
 			  Eigen::VectorXd jointSpeeds, Eigen::VectorXd q0) :
-    _clusters(clusters), _jointSpeeds(jointSpeeds), //_jointSpeeds(Eigen::ArrayXd(jointSpeeds)),
-    _q0(q0)
-  { _configurations = parseConfigurations(configsPath);
-    nbVertices = int(_configurations.rows());
+    _configurations(configurations), _clusters(clusters), _jointSpeeds(jointSpeeds), _q0(q0)
+  {nbVertices = int(_configurations.rows());
     nbClusters = int(_clusters.rows());
     distances = Eigen::MatrixXd::Zero(nbVertices, nbVertices);}
   void computeDistances();

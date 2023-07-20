@@ -108,7 +108,7 @@ void distanceMatrix::computeDistances()
   for (int k=0; k<nbClusters; k++)
     {
       std::cout << "cluster " << k << std::endl;
-      Eigen::VectorXd clus = _clusters.row(k);
+      Eigen::VectorXi clus = _clusters.row(k);
       int clusterSize = int(clus.size());
       while (clus[clusterSize-1]<0)
 	clusterSize-=1;
