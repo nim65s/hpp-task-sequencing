@@ -46,6 +46,15 @@ public:
 
   virtual CORBA::Double distanceToMesh(const hpp::floatSeq &q,
       const CORBA::Double *p, CORBA::Double *closest);
+  virtual void isoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
+			   CORBA::Long nbCols, CORBA::ULong c, CORBA::ULong nc, CORBA::ULong tn,
+			   CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
+			   CORBA::Double k,
+			   hpp::corbaserver::task_sequencing::Clusters_out result);
+  virtual void computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqSeq& clusters,
+				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
+				hpp::floatSeqSeq_out distances);
+  virtual void setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size);
 private:
   core::ProblemSolverPtr_t problemSolver();
   DevicePtr_t getRobotOrThrow();

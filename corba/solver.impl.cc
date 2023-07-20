@@ -29,8 +29,6 @@
 #include <../corba/solver.impl.hh>
 #include <../corba/task-sequencing.hh>
 
-#include <../src/isodata/isodata.h>
-#include <../src/config-distances/distances.h>
 #include <hpp/pinocchio/device.hh>
 #include <hpp/pinocchio/liegroup-space.hh>
 
@@ -45,7 +43,6 @@ namespace impl {
 using corbaServer::floatSeqToConfig;
 using corbaServer::floatSeqToVector;
 using corbaServer::vectorToFloatSeq;
-using corbaServer::matrixToFloatSeqSeq;
 
 DevicePtr_t Solver::getRobotOrThrow()
 {
@@ -160,65 +157,6 @@ void Solver::display(CORBA::String_out solver)
     oss << (solver_);
     solver = oss.str().c_str();
   } catch (const std::exception& exc) {
-    throw Error(exc.what());
-  }
-}
-
-void Solver::testIsoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
-			 CORBA::Long nbCols, CORBA::ULong c, CORBA::ULong nc, CORBA::ULong tn,
-			 CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
-			 CORBA::Double k,
-			 hpp::corbaserver::task_sequencing::Clusters_out result)
-{
-  try{
-    using hpp::corbaserver::task_sequencing::Clusters;
-    // using the clustering algorithm
-    isodata isodataTest(hpp::corbaServer::floatSeqSeqToMatrix(points), nbRows, nbCols, c, nc, tn, te, tc, nt, ns, k);
-    std::vector<ResultCluster> res = isodataTest.run();
-    // storing the returned result in a sequence
-    std::size_t size = res.size();
-    hpp::corbaserver::task_sequencing::Cluster *clusters = Clusters::allocbuf((CORBA::ULong)size);
-    Clusters* tmp = new Clusters((CORBA::ULong)size, (CORBA::ULong)size, clusters, true);
-    result = tmp;
-    for (std::size_t i=0; i<size;++i){
-      Eigen::VectorXd c = res[i].centroid;
-      Eigen::MatrixXd p = res[i].points;
-      hpp::corbaserver::task_sequencing::Cluster element;
-      element.centroid = *corbaServer::vectorToFloatSeq(c);
-      element.points = *corbaServer::matrixToFloatSeqSeq(p);
-      clusters[i] = element;
-    }
-  } catch(const std::exception& exc){
-    throw Error(exc.what());
-  }
-}
-
-void Solver::computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqSeq& clusters,
-				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
-				hpp::floatSeqSeq_out distances)
-{
-  try{
-    using hpp::corbaserver::task_sequencing::Clusters;
-    // distance matrix computation class
-    distanceMatrix matrix(hpp::corbaServer::floatSeqSeqToMatrix(configs),
-			  hpp::corbaServer::intSeqSeqToMatrix(clusters),
-			  hpp::corbaServer::floatSeqToVector(jointSpeeds),
-			  hpp::corbaServer::floatSeqToVector(q0));
-    matrix.computeDistances();
-    // storing the distances in a sequence
-    Eigen::MatrixXd distMat = matrix.getMatrix();
-    distances = corbaServer::matrixToFloatSeqSeq(distMat);
-  } catch(const std::exception& exc){
-    throw Error(exc.what());
-  }
-}
-
-void Solver::setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size)
-{
-  try{
-    armFirstIdx = start;
-    armSize = size;
-  } catch(const std::exception& exc){
     throw Error(exc.what());
   }
 }

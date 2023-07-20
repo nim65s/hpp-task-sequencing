@@ -9,64 +9,35 @@
 namespace hpp{
 namespace task_sequencing{
 
-  
-Eigen::MatrixXd parseConfigurations(std::string filePath)
-{
-  std::ifstream infile(filePath);
-  std::vector<std::vector<float>> configs;
-  configs.clear();
-  std::vector<float> config;
-  int nbConfigs = 0;
-  for (std::string line; std::getline(infile, line); ){
-    nbConfigs+=1;
-    std::stringstream lineToSplit(line);
-    config.clear();
-    for (std::string value; std::getline(lineToSplit, value, ' '); ){
-      config.push_back(stof(value));
-    }
-    configs.push_back(config);
-  }
-  // put into matrix
-  int configSize = int(config.size());
-  Eigen::MatrixXd configurations(nbConfigs, configSize);
-  for (int i=0; i<nbConfigs; i++)
-    {
-      for (int j=0; j<configSize; j++)
-        configurations(i,j) = configs[i][j];
-    }
-  return configurations;
-}
-
 class distanceMatrix
 {
-  Eigen::MatrixXd _configurations;
-  Eigen::MatrixXi _clusters;
-  Eigen::VectorXd _jointSpeeds; // Eigen::ArrayXd _jointSpeeds;
-  Eigen::VectorXd _q0;
-  int nbVertices;
+  Eigen::MatrixXd _configurations; // a configuration per row
+  Eigen::MatrixXi _clusters; // a cluster per row (ended by "-1"s)
+  Eigen::VectorXd _jointSpeeds;
+  Eigen::VectorXd _q0; // rest configuration of the robot
+  int nbConfigs;
   int nbClusters;
   Eigen::MatrixXd distances;
  public:
   explicit distanceMatrix(Eigen::MatrixXd configurations, Eigen::MatrixXi clusters,
 			  Eigen::VectorXd jointSpeeds, Eigen::VectorXd q0) :
     _configurations(configurations), _clusters(clusters), _jointSpeeds(jointSpeeds), _q0(q0)
-  {nbVertices = int(_configurations.rows());
+  {nbConfigs = int(_configurations.rows());
     nbClusters = int(_clusters.rows());
-    distances = Eigen::MatrixXd::Zero(nbVertices, nbVertices);}
+    distances = Eigen::MatrixXd::Zero(nbConfigs, nbConfigs);}
   void computeDistances();
   double getDist(int i, int j) const;
   Eigen::MatrixXd getMatrix() const;
-  std::string writeDistanceMatrix() const;
  private:
-  // base configuration distances
+  // Base configuration distances
   bool baseMoves(int config1, int config2) const;
   double baseL1dist(int config1, int config2) const;
-  // arm configuration distances
+  // Arm configuration distances
   double maxJointDiff(int config1, int config2) const;
   double maxJointDiff(int config) const;
   double jointL2dist(int config1, int config2) const;
   double jointL2dist(int config1, int config2, Eigen::VectorXd weights) const;
-  // to compute the total distance between two configurations
+  // Total distance between two configurations
   double configDist(int config1, int config2) const;
 };
 

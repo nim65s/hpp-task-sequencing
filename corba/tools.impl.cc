@@ -29,6 +29,9 @@
 #include <../corba/tools.impl.hh>
 #include <../corba/task-sequencing.hh>
 
+#include <../src/isodata/isodata.h>
+#include <../src/config-distances/distances.h>
+
 #include <hpp/fcl/BVH/BVH_model.h>
 #include <hpp/fcl/distance.h>
 #include <hpp/fcl/shape/geometric_shapes.h>
@@ -55,6 +58,7 @@ namespace impl {
 using corbaServer::floatSeqToConfig;
 using corbaServer::floatSeqToVector;
 using corbaServer::vectorToFloatSeq;
+using corbaServer::matrixToFloatSeqSeq;
 
 DevicePtr_t Tools::getRobotOrThrow()
 {
@@ -131,6 +135,67 @@ CORBA::Double Tools::distanceToMesh(const hpp::floatSeq &q,
   closest[1] = result.nearest_points[1][1];
   closest[2] = result.nearest_points[1][2];
   return result.min_distance + eps;
+}
+
+void Tools::isoData(const ::hpp::floatSeqSeq& points, CORBA::Long nbRows,
+			 CORBA::Long nbCols, CORBA::ULong c, CORBA::ULong nc, CORBA::ULong tn,
+			 CORBA::Double te, CORBA::Double tc, CORBA::ULong nt, CORBA::ULong ns,
+			 CORBA::Double k,
+			 hpp::corbaserver::task_sequencing::Clusters_out result)
+{
+  try{
+    using hpp::corbaserver::task_sequencing::Clusters;
+    
+    // Clustering the points
+    isodata isodataTest(hpp::corbaServer::floatSeqSeqToMatrix(points), nbRows, nbCols, c, nc, tn, te, tc, nt, ns, k);
+    std::vector<ResultCluster> res = isodataTest.run();
+
+    // Storing the result in a sequence
+    std::size_t size = res.size();
+    hpp::corbaserver::task_sequencing::Cluster *clusters = Clusters::allocbuf((CORBA::ULong)size);
+    Clusters* tmp = new Clusters((CORBA::ULong)size, (CORBA::ULong)size, clusters, true);
+    result = tmp;
+    for (std::size_t i=0; i<size;++i){
+      Eigen::VectorXd c = res[i].centroid;
+      Eigen::MatrixXd p = res[i].points;
+      hpp::corbaserver::task_sequencing::Cluster element;
+      element.centroid = *corbaServer::vectorToFloatSeq(c);
+      element.points = *corbaServer::matrixToFloatSeqSeq(p);
+      clusters[i] = element;
+    }
+  } catch(const std::exception& exc){
+    throw Error(exc.what());
+  }
+}
+
+void Tools::computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqSeq& clusters,
+				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
+				hpp::floatSeqSeq_out distances)
+{
+  try{
+    // Compute the distance matrix
+    distanceMatrix matrix(hpp::corbaServer::floatSeqSeqToMatrix(configs),
+			  hpp::corbaServer::intSeqSeqToMatrix(clusters),
+			  hpp::corbaServer::floatSeqToVector(jointSpeeds),
+			  hpp::corbaServer::floatSeqToVector(q0));
+    matrix.computeDistances();
+    
+    // Store the matrix in a sequence
+    Eigen::MatrixXd distMat = matrix.getMatrix();
+    distances = corbaServer::matrixToFloatSeqSeq(distMat);
+  } catch(const std::exception& exc){
+    throw Error(exc.what());
+  }
+}
+
+void Tools::setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size)
+{
+  try{
+    int armFirstIdx = start;
+    int armSize = size;
+  } catch(const std::exception& exc){
+    throw Error(exc.what());
+  }
 }
 
 } // namespace impl
