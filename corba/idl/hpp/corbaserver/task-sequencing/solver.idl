@@ -112,13 +112,9 @@ module hpp {
 	/// \param jointSpeeds vector of the maximal joint velocities
 	/// \param q0 vector of the rest configuration of the robot
 	/// \retval distances distance matrix for the given configurations
-	// void computeDistances(in floatSeqSeq configs, in intSeqSeq clusters,
-	// 		      in floatSeq jointSpeeds, in floatSeq q0,
-	// 		      out floatSeqSeq distances)
-	//   raises(Error);
-	void computeDistances(in string configsPath, in floatSeqSeq clusters,
+	void computeDistances(in floatSeqSeq configs, in intSeqSeq clusters,
 			      in floatSeq jointSpeeds, in floatSeq q0,
-			      out string location) //out floatSeqSeq distances)
+			      out floatSeqSeq distances)
 	  raises(Error);
 
 	void setRobotArmIndices(in unsigned long start, in unsigned long size)
