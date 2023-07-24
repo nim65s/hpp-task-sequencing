@@ -81,6 +81,12 @@ module hpp {
 
 	void setRobotArmIndices(in unsigned long start, in unsigned long size)
 	  raises(Error);
+
+	/// Computes the barycenter of a set of quaternions
+	/// \param quaternions matrix of the set of quaternions
+	/// \retval barycenter quaternion of the barycenter
+	void quaternionBarycenter(in floatSeqSeq quaternions, out floatSeq barycenter)
+	  raises(Error);
       }; // interface Tools
     }; // module task_sequencing
   }; // module corbaServer

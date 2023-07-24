@@ -55,6 +55,8 @@ public:
 				const hpp::floatSeq& jointSpeeds, const hpp::floatSeq& q0,
 				hpp::floatSeqSeq_out distances);
   virtual void setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size);
+  virtual void quaternionBarycenter(const hpp::floatSeqSeq& quaternions,
+				    hpp::floatSeq_out barycenter);
 private:
   core::ProblemSolverPtr_t problemSolver();
   DevicePtr_t getRobotOrThrow();

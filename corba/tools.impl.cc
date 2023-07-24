@@ -31,6 +31,7 @@
 
 #include <../src/isodata/isodata.h>
 #include <../src/config-distances/distances.h>
+#include <../src/quaternion-barycenter/quatBarycenter.h>
 
 #include <hpp/fcl/BVH/BVH_model.h>
 #include <hpp/fcl/distance.h>
@@ -193,6 +194,17 @@ void Tools::setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size
   try{
     int armFirstIdx = start;
     int armSize = size;
+  } catch(const std::exception& exc){
+    throw Error(exc.what());
+  }
+}
+
+void quaternionBarycenter(const hpp::floatSeqSeq& quaternions, hpp::floatSeq_out barycenter)
+{
+  try{
+    QuatBarycenter barycenterInstance(hpp::corbaServer::floatSeqSeqToMatrix(quaternions));
+    barycenterInstance.computeBarycenter();
+    barycenter = corbaServer::vectorToFloatSeq(barycenterInstance.getBarycenter());
   } catch(const std::exception& exc){
     throw Error(exc.what());
   }
