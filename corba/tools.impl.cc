@@ -199,7 +199,7 @@ void Tools::setRobotArmIndices(const CORBA::ULong start, const CORBA::ULong size
   }
 }
 
-void quaternionBarycenter(const hpp::floatSeqSeq& quaternions, hpp::floatSeq_out barycenter)
+void Tools::quaternionBarycenter(const hpp::floatSeqSeq& quaternions, hpp::floatSeq_out barycenter)
 {
   try{
     QuatBarycenter barycenterInstance(hpp::corbaServer::floatSeqSeqToMatrix(quaternions));

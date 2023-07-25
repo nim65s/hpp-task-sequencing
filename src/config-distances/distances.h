@@ -24,7 +24,7 @@ class distanceMatrix
     _configurations(configurations), _clusters(clusters), _jointSpeeds(jointSpeeds), _q0(q0)
   {nbConfigs = int(_configurations.rows());
     nbClusters = int(_clusters.rows());
-    distances = Eigen::MatrixXd::Zero(nbConfigs, nbConfigs);}
+    distances = Eigen::MatrixXd::Zero(nbConfigs+1, nbConfigs+1);}
   void computeDistances();
   double getDist(int i, int j) const;
   Eigen::MatrixXd getMatrix() const;

@@ -22,11 +22,8 @@ void QuatBarycenter::computeBarycenter()
       maxEigenVal = eigenValues[i];
     }
   }
-  // associated vector
+  // associated vector put in S^3
   barycenter = eigenVectors.col(maxEigenIdx).normalized();
-  // Put q in S^3
-  std::cout << "max eigen value " << maxEigenVal << " with vector \n" <<
-    eigenVectors.col(maxEigenIdx) << std::endl;
 }
 
 Eigen::Vector4d QuatBarycenter::getBarycenter() const { return barycenter; }

@@ -18,13 +18,14 @@ namespace task_sequencing{
 // Checks if two configurations have different base positions
 bool distanceMatrix::baseMoves(int config1, int config2) const
 {
-  return (abs(_configurations.row(config2)[0]-_configurations.row(config1)[0])>1.0e-5 || abs(_configurations.row(config2)[1]-_configurations.row(config1)[1])>1.0e-5);
+  return (abs(_configurations.row(config2-1)[0]-_configurations.row(config1-1)[0])>1.0e-5 ||
+	  abs(_configurations.row(config2-1)[1]-_configurations.row(config1-1)[1])>1.0e-5);
 }
 
 // Computes the Manhattan distance between two base configurations
 double distanceMatrix::baseL1dist(int config1, int config2) const
 {
-  return abs(_configurations.row(config2)[0]-_configurations.row(config1)[0]) + abs(_configurations.row(config2)[1]-_configurations.row(config1)[1]);
+  return abs(_configurations.row(config2-1)[0]-_configurations.row(config1-1)[0]) + abs(_configurations.row(config2-1)[1]-_configurations.row(config1-1)[1]);
 }
 
 // Computes the maximum time needed for a joint to go from its position in config1
@@ -32,8 +33,8 @@ double distanceMatrix::baseL1dist(int config1, int config2) const
 double distanceMatrix::maxJointDiff(int config1, int config2) const
 {
   int nbJoints = int(_jointSpeeds.size());
-  Eigen::VectorXd c1 = _configurations.row(config1);
-  Eigen::VectorXd c2 = _configurations.row(config2);
+  Eigen::VectorXd c1 = _configurations.row(config1-1);
+  Eigen::VectorXd c2 = _configurations.row(config2-1);
   Eigen::VectorXd joints1 = c1.segment(4,nbJoints);
   Eigen::VectorXd joints2 = c2.segment(4,nbJoints);
   Eigen::ArrayXd diff = joints2-joints1;
@@ -51,7 +52,7 @@ double distanceMatrix::maxJointDiff(int config1, int config2) const
 double distanceMatrix::maxJointDiff(int config) const
 {
   int nbJoints = int(_jointSpeeds.size());
-  Eigen::VectorXd c1 = _configurations.row(config);
+  Eigen::VectorXd c1 = _configurations.row(config-1);
   Eigen::VectorXd joints0 = _q0.segment(4,nbJoints);
   Eigen::VectorXd joints1 = c1.segment(4,nbJoints);
   Eigen::ArrayXd diff = joints0-joints1;
@@ -67,8 +68,8 @@ double distanceMatrix::maxJointDiff(int config) const
 // Computes the L2 distance between the joints in config1 and config2
 double distanceMatrix::jointL2dist(int config1, int config2) const // another possible distance
 {
-  Eigen::VectorXd c1 = _configurations.row(config1);
-  Eigen::VectorXd c2 = _configurations.row(config2);
+  Eigen::VectorXd c1 = _configurations.row(config1-1);
+  Eigen::VectorXd c2 = _configurations.row(config2-1);
   Eigen::VectorXd joints1 = c1.segment(4,12);
   Eigen::VectorXd joints2 = c2.segment(4,12);
   return (joints2-joints1).norm();
@@ -77,8 +78,8 @@ double distanceMatrix::jointL2dist(int config1, int config2) const // another po
 // Computes the weighted L2 distance between the joints in config1 and config2
 double distanceMatrix::jointL2dist(int config1, int config2, Eigen::VectorXd weights) const // with weights
 {
-  Eigen::VectorXd c1 = _configurations.row(config1);
-  Eigen::VectorXd c2 = _configurations.row(config2);
+  Eigen::VectorXd c1 = _configurations.row(config1-1);
+  Eigen::VectorXd c2 = _configurations.row(config2-1);
   Eigen::VectorXd joints1 = c1.segment(4,12);
   Eigen::VectorXd joints2 = c2.segment(4,12);
   Eigen::ArrayXd diff = joints2-joints1;
@@ -106,12 +107,13 @@ double distanceMatrix::configDist(int config1, int config2) const
 void distanceMatrix::computeDistances()
 {
   std::set<int> allVertices;
-  for (int i=0; i<nbConfigs; i++)
+  for (int i=1; i<nbConfigs+1; i++)
     allVertices.emplace(i);
-  // all costs to infinity (non existant arcs)
-  for (int i=0; i<distances.rows(); i++)
+  // costs to and from depot are already 0
+  // all other costs to infinity (non existant arcs)
+  for (int i=1; i<distances.rows(); i++)
     {
-      for (int j=0; j<distances.cols(); j++)
+      for (int j=1; j<distances.cols(); j++)
 	distances(i,j) = 1e12;
     }
   // change costs for existant arcs
@@ -120,7 +122,7 @@ void distanceMatrix::computeDistances()
       std::cout << "cluster " << k << std::endl;
       Eigen::VectorXi clus = _clusters.row(k);
       int clusterSize = int(clus.size());
-      while (clus[clusterSize-1]<0)
+      while (clusterSize>0 && clus[clusterSize-1]<0)
 	clusterSize-=1;
       std::vector<int> cluster;
       for (int i=0; i<clusterSize; i++)
@@ -135,8 +137,12 @@ void distanceMatrix::computeDistances()
 	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j<verticesToConsider.end(); j++)
 	    distances(cluster[i-1], *j) = int(100000*configDist(cluster[i], *j));
 	}
-      distances(cluster[0], cluster[1]) = 0;
-      distances(cluster[cluster.size()-1], cluster[0]) = 0;
+      if (clusterSize>1)
+	{
+	  distances(cluster[0], cluster[1]) = 0;
+	  // distances(cluster[cluster.size()-1], cluster[0]) = 0;
+	  distances(cluster[clusterSize-1], cluster[0]) = 0;
+	}
     }
   std::cout << "Matrix computed" << std::endl;
 }
