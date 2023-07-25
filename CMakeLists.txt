@@ -67,7 +67,9 @@ set(${PROJECT_NAME}_SOURCES
   src/isodata/isodata.cpp
   src/isodata/MyTime.h
   src/config-distances/distances.h
-  src/config-distances/distances.cpp)
+  src/config-distances/distances.cpp
+  src/quaternion-barycenter/quatBarycenter.h
+  src/quaternion-barycenter/quatBarycenter.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES}
                                    ${${PROJECT_NAME}_HEADERS})
