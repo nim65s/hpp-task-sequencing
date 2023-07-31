@@ -1,9 +1,7 @@
-#include <fstream>
-#include <sstream>
-#include <string>
 #include <set>
 #include <vector>
 #include <Eigen/Core>
+#include <math.h>
 #include <iostream>
 
 namespace hpp{

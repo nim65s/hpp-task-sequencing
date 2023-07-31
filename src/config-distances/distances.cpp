@@ -18,14 +18,21 @@ namespace task_sequencing{
 // Checks if two configurations have different base positions
 bool distanceMatrix::baseMoves(int config1, int config2) const
 {
-  return (abs(_configurations.row(config2-1)[0]-_configurations.row(config1-1)[0])>1.0e-5 ||
-	  abs(_configurations.row(config2-1)[1]-_configurations.row(config1-1)[1])>1.0e-5);
+  Eigen::VectorXd c1(_configurations.row(config1-1));
+  Eigen::VectorXd c2(_configurations.row(config2-1));
+  return abs(c2[0]-c1[0])>1.0e-5 || abs(c2[1]-c1[1])>1.0e-5;
 }
 
 // Computes the Manhattan distance between two base configurations
 double distanceMatrix::baseL1dist(int config1, int config2) const
 {
-  return abs(_configurations.row(config2-1)[0]-_configurations.row(config1-1)[0]) + abs(_configurations.row(config2-1)[1]-_configurations.row(config1-1)[1]);
+  double pi = 3.14159265;
+  Eigen::VectorXd c1(_configurations.row(config1-1));
+  Eigen::VectorXd c2(_configurations.row(config2-1));
+  double angleDiff = abs(std::atan2(c1[2],c1[3]) - std::atan2(c2[2],c2[3]));
+  if (angleDiff>pi)
+    angleDiff = 2*pi - angleDiff;
+  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+angleDiff);
 }
 
 // Computes the maximum time needed for a joint to go from its position in config1
@@ -35,14 +42,12 @@ double distanceMatrix::maxJointDiff(int config1, int config2) const
   int nbJoints = int(_jointSpeeds.size());
   Eigen::VectorXd c1 = _configurations.row(config1-1);
   Eigen::VectorXd c2 = _configurations.row(config2-1);
-  Eigen::VectorXd joints1 = c1.segment(4,nbJoints);
-  Eigen::VectorXd joints2 = c2.segment(4,nbJoints);
-  Eigen::ArrayXd diff = joints2-joints1;
-  // Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  Eigen::ArrayXd joints1 = c1.segment(4,nbJoints);
+  Eigen::ArrayXd joints2 = c2.segment(4,nbJoints);
   Eigen::VectorXd coeffs(nbJoints);
   for (int i=0; i<nbJoints; i++)
     coeffs[i] = 1/_jointSpeeds[i];
-  Eigen::VectorXd movementTimes = Eigen::abs(diff);
+  Eigen::VectorXd movementTimes = Eigen::abs(joints2-joints1);
   movementTimes = movementTimes.cwiseProduct(coeffs);
   return double(movementTimes.lpNorm<Eigen::Infinity>());
 }
@@ -53,14 +58,12 @@ double distanceMatrix::maxJointDiff(int config) const
 {
   int nbJoints = int(_jointSpeeds.size());
   Eigen::VectorXd c1 = _configurations.row(config-1);
-  Eigen::VectorXd joints0 = _q0.segment(4,nbJoints);
-  Eigen::VectorXd joints1 = c1.segment(4,nbJoints);
-  Eigen::ArrayXd diff = joints0-joints1;
-  // Eigen::VectorXd coeffs = Eigen::inverse(_jointSpeeds);
+  Eigen::ArrayXd joints0 = _q0.segment(4,nbJoints);
+  Eigen::ArrayXd joints1 = c1.segment(4,nbJoints);
   Eigen::VectorXd coeffs(nbJoints);
   for (int i=0; i<nbJoints; i++)
     coeffs[i] = 1/_jointSpeeds[i];
-  Eigen::VectorXd movementTimes = Eigen::abs(diff);
+  Eigen::VectorXd movementTimes = Eigen::abs(joints0-joints1);
   movementTimes = movementTimes.cwiseProduct(coeffs);
   return double(movementTimes.lpNorm<Eigen::Infinity>());
 }
@@ -70,9 +73,7 @@ double distanceMatrix::jointL2dist(int config1, int config2) const // another po
 {
   Eigen::VectorXd c1 = _configurations.row(config1-1);
   Eigen::VectorXd c2 = _configurations.row(config2-1);
-  Eigen::VectorXd joints1 = c1.segment(4,12);
-  Eigen::VectorXd joints2 = c2.segment(4,12);
-  return (joints2-joints1).norm();
+  return (c2.segment(4,12) - c1.segment(4,12)).norm();
 }
 
 // Computes the weighted L2 distance between the joints in config1 and config2
@@ -80,10 +81,9 @@ double distanceMatrix::jointL2dist(int config1, int config2, Eigen::VectorXd wei
 {
   Eigen::VectorXd c1 = _configurations.row(config1-1);
   Eigen::VectorXd c2 = _configurations.row(config2-1);
-  Eigen::VectorXd joints1 = c1.segment(4,12);
-  Eigen::VectorXd joints2 = c2.segment(4,12);
-  Eigen::ArrayXd diff = joints2-joints1;
-  Eigen::VectorXd squared = Eigen::abs2(diff);
+  Eigen::ArrayXd joints1 = c1.segment(4,12);
+  Eigen::ArrayXd joints2 = c2.segment(4,12);
+  Eigen::VectorXd squared = Eigen::abs2(joints2 - joints1);
   return sqrt(squared.dot(weights));
 }
 
@@ -120,29 +120,51 @@ void distanceMatrix::computeDistances()
   for (int k=0; k<nbClusters; k++)
     {
       std::cout << "cluster " << k << std::endl;
-      Eigen::VectorXi clus = _clusters.row(k);
-      int clusterSize = int(clus.size());
-      while (clusterSize>0 && clus[clusterSize-1]<0)
-	clusterSize-=1;
-      std::vector<int> cluster;
-      for (int i=0; i<clusterSize; i++)
-	cluster.emplace_back(clus[i]);
-      std::vector<int> verticesToConsider(nbConfigs);
+      // retrieve the data
+      Eigen::VectorXi clus = _clusters.row(k); // retrieve the cluster from the matrix
+      std::set<int> clusterSet; // put it into a set
+      clusterSet.clear();
+      for (int i=0; i<clus.size(); i++)
+	clusterSet.insert(clus[i]);
+      clusterSet.erase(-1);
+      int clusterSize = int(clusterSet.size()); // get its size
+      std::vector<int> cluster(clusterSet.begin(), clusterSet.end()); // vector version of the set
+      std::vector<int> verticesToConsider(nbConfigs); // vertices out of the cluster
       std::vector<int>::iterator it;
-      it = std::set_difference(allVertices.begin(), allVertices.end(), cluster.begin(), cluster.end(), verticesToConsider.begin());
+      it = std::set_difference(allVertices.begin(), allVertices.end(), clusterSet.begin(), clusterSet.end(), verticesToConsider.begin());
       verticesToConsider.resize(it-verticesToConsider.begin());
-      for (int i=1; i<clusterSize-1; i++)
+      // compute the costs
+      if (clusterSize>2)
 	{
-	  distances(cluster[i], cluster[i+1]) = 0;
-	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j<verticesToConsider.end(); j++)
-	    distances(cluster[i-1], *j) = int(100000*configDist(cluster[i], *j));
+	  // first and last nodes
+	  distances(cluster[0], cluster[1]) = 0;
+	  distances(cluster[clusterSize-1], cluster[0]) = 0;
+	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
+	    { distances(cluster[clusterSize-1], *j) = int(100000*configDist(cluster[0], *j));
+	      distances(cluster[clusterSize-2], *j) = int(100000*configDist(cluster[clusterSize-1], *j)); }
+	  // other nodes
+	  for (int i=1; i<clusterSize-1; i++)
+	    {
+	      distances(cluster[i], cluster[i+1]) = 0;
+	      for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
+		distances(cluster[i-1], *j) = int(100000*configDist(cluster[i], *j));
+	    }
 	}
-      if (clusterSize>1)
+      else if (clusterSize==2)
 	{
 	  distances(cluster[0], cluster[1]) = 0;
-	  // distances(cluster[cluster.size()-1], cluster[0]) = 0;
-	  distances(cluster[clusterSize-1], cluster[0]) = 0;
+	  distances(cluster[1], cluster[0]) = 0;
+	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
+	    { distances(cluster[0], *j) = int(100000*configDist(cluster[1], *j));
+	      distances(cluster[1], *j) = int(100000*configDist(cluster[0], *j)); }
 	}
+      else if (clusterSize==1)
+	{
+	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
+	    distances(cluster[0], *j) = int(100000*configDist(cluster[0], *j));
+	}
+      else
+	std::cout << "Problem with cluster " << k << " (of size " <<  clusterSize << ")" << std::endl;
     }
   std::cout << "Matrix computed" << std::endl;
 }
