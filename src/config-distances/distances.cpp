@@ -26,13 +26,14 @@ bool distanceMatrix::baseMoves(int config1, int config2) const
 // Computes the Manhattan distance between two base configurations
 double distanceMatrix::baseL1dist(int config1, int config2) const
 {
+  double angleImportance = 2;
   double pi = 3.14159265;
   Eigen::VectorXd c1(_configurations.row(config1-1));
   Eigen::VectorXd c2(_configurations.row(config2-1));
   double angleDiff = abs(std::atan2(c1[2],c1[3]) - std::atan2(c2[2],c2[3]));
   if (angleDiff>pi)
     angleDiff = 2*pi - angleDiff;
-  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+angleDiff);
+  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+angleImportance*angleDiff);
 }
 
 // Computes the maximum time needed for a joint to go from its position in config1
@@ -91,9 +92,10 @@ double distanceMatrix::jointL2dist(int config1, int config2, Eigen::VectorXd wei
 // If the base moves we first fold the arm, then move the base and eventually unfold the arm
 double distanceMatrix::configDist(int config1, int config2) const
 {
+  double baseImportance = 2;
   double res = 0;
   if (baseMoves(config1, config2)==true) {
-    res += baseL1dist(config1, config2);
+    res += baseImportance*baseL1dist(config1, config2);
     res += maxJointDiff(config1);
     res += maxJointDiff(config2);
   }
@@ -106,6 +108,9 @@ double distanceMatrix::configDist(int config1, int config2) const
 // Computes the distance matrix of the TSP model of our GTSP (a node per configuration)
 void distanceMatrix::computeDistances()
 {
+  const double infty = 1e12;
+  const int bigNegNb = -1e6;
+  const int factor = 1000;
   std::set<int> allVertices;
   for (int i=1; i<nbConfigs+1; i++)
     allVertices.emplace(i);
@@ -114,12 +119,11 @@ void distanceMatrix::computeDistances()
   for (int i=1; i<distances.rows(); i++)
     {
       for (int j=1; j<distances.cols(); j++)
-	distances(i,j) = 1e12;
+	distances(i,j) = infty;
     }
   // change costs for existant arcs
   for (int k=0; k<nbClusters; k++)
     {
-      std::cout << "cluster " << k << std::endl;
       // retrieve the data
       Eigen::VectorXi clus = _clusters.row(k); // retrieve the cluster from the matrix
       std::set<int> clusterSet; // put it into a set
@@ -140,14 +144,14 @@ void distanceMatrix::computeDistances()
 	  distances(cluster[0], cluster[1]) = 0;
 	  distances(cluster[clusterSize-1], cluster[0]) = 0;
 	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
-	    { distances(cluster[clusterSize-1], *j) = int(100000*configDist(cluster[0], *j));
-	      distances(cluster[clusterSize-2], *j) = int(100000*configDist(cluster[clusterSize-1], *j)); }
+	    { distances(cluster[clusterSize-1], *j) = int(factor*configDist(cluster[0], *j));
+	      distances(cluster[clusterSize-2], *j) = int(factor*configDist(cluster[clusterSize-1], *j)); }
 	  // other nodes
 	  for (int i=1; i<clusterSize-1; i++)
 	    {
 	      distances(cluster[i], cluster[i+1]) = 0;
 	      for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
-		distances(cluster[i-1], *j) = int(100000*configDist(cluster[i], *j));
+		distances(cluster[i-1], *j) = int(factor*configDist(cluster[i], *j));
 	    }
 	}
       else if (clusterSize==2)
@@ -155,18 +159,40 @@ void distanceMatrix::computeDistances()
 	  distances(cluster[0], cluster[1]) = 0;
 	  distances(cluster[1], cluster[0]) = 0;
 	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
-	    { distances(cluster[0], *j) = int(100000*configDist(cluster[1], *j));
-	      distances(cluster[1], *j) = int(100000*configDist(cluster[0], *j)); }
+	    { distances(cluster[0], *j) = int(factor*configDist(cluster[1], *j));
+	      distances(cluster[1], *j) = int(factor*configDist(cluster[0], *j)); }
 	}
       else if (clusterSize==1)
 	{
 	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
-	    distances(cluster[0], *j) = int(100000*configDist(cluster[0], *j));
+	    distances(cluster[0], *j) = int(factor*configDist(cluster[0], *j));
 	}
       else
 	std::cout << "Problem with cluster " << k << " (of size " <<  clusterSize << ")" << std::endl;
     }
-  std::cout << "Matrix computed" << std::endl;
+  // Transformation to a symmetric instance (as described by Jonker and Volgenant, 1983)
+  for (int i=0; i<nbConfigs+1; i++) {
+    for (int j=0; j<nbConfigs+1; j++) {
+      symmetricDistances(i, j) = infty; // top-left and bottom-right corners to infitnity
+      symmetricDistances(nbConfigs+1+i, nbConfigs+1+j) = infty;
+      if (i!=j) // copy the original distances such that the matrix is symmetric
+	{ symmetricDistances(nbConfigs+1+i, j) = distances(i,j);
+	  symmetricDistances(i, nbConfigs+1+j) = distances(j,i); }
+      else // negative costs for the diagonal of the original matrix
+	{ symmetricDistances(nbConfigs+1+i, j) = bigNegNb;
+	  symmetricDistances(i, nbConfigs+1+j) = bigNegNb; }
+    }
+  }
+  // verify symmetry
+  bool sym = true;
+  for (int i=0; i<symmetricDistances.rows(); i++){
+    for (int j=i; j<symmetricDistances.cols(); j++){
+      if (symmetricDistances(i,j)!=symmetricDistances(j,i))
+	{ if (sym==true)
+	    std::cout << i << " " << j << std::endl;
+	  sym=false; }
+    }
+  }
 }
 
 // Returns coeffcient (i,j) of the distance matrix i.e. the distance between configurations i and j
@@ -176,8 +202,21 @@ double distanceMatrix::getDist(int i, int j) const
 }
 
 // Returns the distance matrix
-Eigen::MatrixXd distanceMatrix::getMatrix() const {
-  return distances;
+Eigen::MatrixXd distanceMatrix::getMatrix() const { return distances; }
+
+// Write the distance matrix to a file
+void distanceMatrix::writeMatrix(std::string filePath) const {
+  int nbCols = int( symmetricDistances.cols() );
+  std::ofstream file(filePath);
+  file << "NAME: matrix\nTYPE: TSP\nDIMENSION: " << 2*nbConfigs+2
+       << "\nEDGE_WEIGHT_TYPE: EXPLICIT\nEDGE_WEIGHT_FORMAT: FULL_MATRIX\nEDGE_WEIGHT_SECTION\n";
+  for (int i=0; i<symmetricDistances.rows(); i++) {
+    for (int j=0; j<nbCols-1; j++)
+      file << symmetricDistances(i,j) << " ";
+    file << symmetricDistances(i,nbCols-1) << "\n";
+  }
+  file << "EOF";
+  file.close();
 }
 
 } // task_sequencing

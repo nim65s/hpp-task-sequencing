@@ -4,6 +4,9 @@
 #include <math.h>
 #include <iostream>
 
+#include <fstream>
+#include <string>
+
 namespace hpp{
 namespace task_sequencing{
 
@@ -16,16 +19,19 @@ class distanceMatrix
   int nbConfigs;
   int nbClusters;
   Eigen::MatrixXd distances;
+  Eigen::MatrixXd symmetricDistances;
  public:
   explicit distanceMatrix(Eigen::MatrixXd configurations, Eigen::MatrixXi clusters,
 			  Eigen::VectorXd jointSpeeds, Eigen::VectorXd q0) :
     _configurations(configurations), _clusters(clusters), _jointSpeeds(jointSpeeds), _q0(q0)
   {nbConfigs = int(_configurations.rows());
     nbClusters = int(_clusters.rows());
-    distances = Eigen::MatrixXd::Zero(nbConfigs+1, nbConfigs+1);}
+    distances = Eigen::MatrixXd::Zero(nbConfigs+1, nbConfigs+1);
+    symmetricDistances = Eigen::MatrixXd::Zero(2*nbConfigs+2, 2*nbConfigs+2);}
   void computeDistances();
   double getDist(int i, int j) const;
   Eigen::MatrixXd getMatrix() const;
+  void writeMatrix(std::string filePath) const;
  private:
   // Base configuration distances
   bool baseMoves(int config1, int config2) const;
