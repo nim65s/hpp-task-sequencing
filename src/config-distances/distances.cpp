@@ -26,14 +26,13 @@ bool distanceMatrix::baseMoves(int config1, int config2) const
 // Computes the Manhattan distance between two base configurations
 double distanceMatrix::baseL1dist(int config1, int config2) const
 {
-  double angleImportance = 2;
   double pi = 3.14159265;
   Eigen::VectorXd c1(_configurations.row(config1-1));
   Eigen::VectorXd c2(_configurations.row(config2-1));
-  double angleDiff = abs(std::atan2(c1[2],c1[3]) - std::atan2(c2[2],c2[3]));
+  double angleDiff = abs(std::atan2(c1[3],c1[2]) - std::atan2(c2[3],c2[2]));
   if (angleDiff>pi)
     angleDiff = 2*pi - angleDiff;
-  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+angleImportance*angleDiff);
+  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+angleImportance*k_base);
 }
 
 // Computes the maximum time needed for a joint to go from its position in config1
@@ -92,10 +91,9 @@ double distanceMatrix::jointL2dist(int config1, int config2, Eigen::VectorXd wei
 // If the base moves we first fold the arm, then move the base and eventually unfold the arm
 double distanceMatrix::configDist(int config1, int config2) const
 {
-  double baseImportance = 2;
   double res = 0;
   if (baseMoves(config1, config2)==true) {
-    res += baseImportance*baseL1dist(config1, config2);
+    res += k_config*baseL1dist(config1, config2);
     res += maxJointDiff(config1);
     res += maxJointDiff(config2);
   }
@@ -196,10 +194,7 @@ void distanceMatrix::computeDistances()
 }
 
 // Returns coeffcient (i,j) of the distance matrix i.e. the distance between configurations i and j
-double distanceMatrix::getDist(int i, int j) const
-{
-  return distances(i,j);
-}
+double distanceMatrix::getDist(int i, int j) const { return distances(i,j); }
 
 // Returns the distance matrix
 Eigen::MatrixXd distanceMatrix::getMatrix() const { return distances; }

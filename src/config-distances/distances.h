@@ -20,6 +20,8 @@ class distanceMatrix
   int nbClusters;
   Eigen::MatrixXd distances;
   Eigen::MatrixXd symmetricDistances;
+  float k_config; //weight for the base distance in the global distance
+  float k_base; // weight for the angular change in the base distance
  public:
   explicit distanceMatrix(Eigen::MatrixXd configurations, Eigen::MatrixXi clusters,
 			  Eigen::VectorXd jointSpeeds, Eigen::VectorXd q0) :
@@ -27,7 +29,9 @@ class distanceMatrix
   {nbConfigs = int(_configurations.rows());
     nbClusters = int(_clusters.rows());
     distances = Eigen::MatrixXd::Zero(nbConfigs+1, nbConfigs+1);
-    symmetricDistances = Eigen::MatrixXd::Zero(2*nbConfigs+2, 2*nbConfigs+2);}
+    symmetricDistances = Eigen::MatrixXd::Zero(2*nbConfigs+2, 2*nbConfigs+2);
+    k_config = 2.;
+    k_base = 2.;}
   void computeDistances();
   double getDist(int i, int j) const;
   Eigen::MatrixXd getMatrix() const;
