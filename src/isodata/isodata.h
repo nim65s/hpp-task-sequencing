@@ -16,12 +16,13 @@
 
 // implementation of the ISODATA clustering algorithm
 
+// structure to store the result of ISODATA
 typedef Eigen::Matrix<ResultCluster, Eigen::Dynamic, 1> ResultingClusters;
 
 class isodata {
 private:
   // data for the initialization
-  // for the sake of simplicity, parameters can only be set at initialization
+  // parameters can only be set at initialization
   unsigned _c; // expected nb of clusters
   unsigned _nc; // initial nb of clusters
   unsigned _tn; // min nb of points in a cluster
@@ -30,11 +31,11 @@ private:
   unsigned _nt; // max nb of merges at each iteration
   unsigned _ns; // max nb of iterations
   // not initialized in the constructor
-  unsigned row; // nb of samples
-  unsigned col; // nb of features
+  unsigned rows; // nb of samples
+  unsigned cols; // nb of features
   Eigen::MatrixXd data; // data to be classified
   std::deque<Cluster> clusters;
-  double angleInfluence;
+  double k_task; // weight of the angle in the distance measure
   double alpha; // splitting factor
 public:
   /**
@@ -45,11 +46,12 @@ public:
    * @param resultPath file to write the results in
    */
   explicit isodata(Eigen::MatrixXd points, int NbRows, int NbCols, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns, double k=1.) :
-    _c(c), _nc(nc), _tn(tn), _te(te), _tc(tc), _nt(nt), _ns(ns), row(NbRows), col(NbCols), data(points), angleInfluence(k), alpha(0.3) {}
+    _c(c), _nc(nc), _tn(tn), _te(te), _tc(tc), _nt(nt), _ns(ns), rows(NbRows), cols(NbCols), data(points), k_task(k), alpha(0.3) {}
 
 
   std::vector<ResultCluster> run()
   {
+    // initialisation
     unsigned iter = 0;
     bool end = false;
     init_clusters();

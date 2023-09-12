@@ -10,37 +10,32 @@
 #include <cmath>
 #include "error.h"
 
-// // euclidian distance between points p1 and p2
-// inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2)
-// {
-//   if (p1.size() != p2.size()){
-//     std::cout << WARN_VECTOR_SIZE << std::endl;
-//     return -1;
-//   }
-//   else{
-//     Eigen::VectorXd diff = p2-p1;
-//     return diff.norm();
-//   }
-// }
-
-// hole distance
-inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2, const double k) // add 'double k' for hole distance
+// task distance
+inline double get_distance(const Eigen::ArrayXd& p1, const Eigen::ArrayXd& p2, const double k_task)
 {
+  // size check of the configurations
   if (p1.size() != 7 || p2.size() != 7) {
     std::cout << WARN_VECTOR_SIZE << std::endl;
     return -1;
   }
   else
     {
-      // l2 distance between the origins
+      // squared L2 distance between the origins
       Eigen::Vector3d p1h = p1.head(3);
       Eigen::Vector3d p2h = p2.head(3);
-      double res = (p2h-p1h).norm();
-      // squared inner prod of the quaternions
-      Eigen::Vector4d p1t = p1.tail(4);
-      Eigen::Vector4d p2t = p2.tail(4);
-      // res = res * (1 + pow(p1t.dot(p2t),2));
-      res = res * (1 + k*pow(p1t.dot(p2t),2)); // for hole distance
+      double originDist = (p2h-p1h).squaredNorm();
+      // quaternion product
+      Eigen::Vector4d prod;
+      prod << p1[3]*p2[3] - p1[4]*p2[4] - p1[5]*p2[5] - p1[6]*p2[6],
+	p1[3]*p2[4] + p1[4]*p2[3] + p1[5]*p2[6] - p1[6]*p2[5],
+	p1[3]*p2[5] - p1[4]*p2[6] + p1[5]*p2[3] + p1[6]*p2[4],
+	p1[3]*p2[6] + p1[4]*p2[5] - p1[5]*p2[4] + p1[6]*p2[3];
+      // quaternion distance
+      double scalarPart = prod[0];
+      double vectorPartNorm = sqrt(prod[1]*prod[1] + prod[2]*prod[2] + prod[3]*prod[3]);
+      double quatDist = 2*std::atan2(vectorPartNorm, scalarPart);
+      // task distance
+      double res = sqrt(originDist*originDist + k_task*quatDist*quatDist);
       return res;
     }
 }
