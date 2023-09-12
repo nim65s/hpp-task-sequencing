@@ -32,7 +32,7 @@ double distanceMatrix::baseL1dist(int config1, int config2) const
   double angleDiff = abs(std::atan2(c1[3],c1[2]) - std::atan2(c2[3],c2[2]));
   if (angleDiff>pi)
     angleDiff = 2*pi - angleDiff;
-  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+angleImportance*k_base);
+  return (abs(c2[0]-c1[0]) + abs(c2[1]-c1[1])) * (1+k_base*angleDiff);
 }
 
 // Computes the maximum time needed for a joint to go from its position in config1
