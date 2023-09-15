@@ -45,7 +45,7 @@ public:
    * @param paramPath file to read the parameters from
    * @param resultPath file to write the results in
    */
-  explicit isodata(Eigen::MatrixXd points, int NbRows, int NbCols, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns, double k=1.) :
+  explicit isodata(Eigen::MatrixXd points, int NbRows, int NbCols, unsigned c, unsigned nc, unsigned tn, double te, double tc, unsigned nt, unsigned ns, double k=0.) :
     _c(c), _nc(nc), _tn(tn), _te(te), _tc(tc), _nt(nt), _ns(ns), rows(NbRows), cols(NbCols), data(points), k_task(k), alpha(0.3) {}
 
 
