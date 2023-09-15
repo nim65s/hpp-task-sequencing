@@ -106,9 +106,10 @@ double distanceMatrix::configDist(int config1, int config2) const
 // Computes the distance matrix of the TSP model of our GTSP (a node per configuration)
 void distanceMatrix::computeDistances()
 {
-  const double infty = 1e12;
-  const int bigNegNb = -1e6;
-  const int factor = 1000;
+  const double infty = 9999999;
+  const int bigNegNb = 0;
+  const int zero = 500;
+  const int factor = 10000;
   std::set<int> allVertices;
   for (int i=1; i<nbConfigs+1; i++)
     allVertices.emplace(i);
@@ -139,23 +140,23 @@ void distanceMatrix::computeDistances()
       if (clusterSize>2)
 	{
 	  // first and last nodes
-	  distances(cluster[0], cluster[1]) = 0;
-	  distances(cluster[clusterSize-1], cluster[0]) = 0;
+	  distances(cluster[0], cluster[1]) = zero;
+	  distances(cluster[clusterSize-1], cluster[0]) = zero;
 	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
 	    { distances(cluster[clusterSize-1], *j) = int(factor*configDist(cluster[0], *j));
 	      distances(cluster[clusterSize-2], *j) = int(factor*configDist(cluster[clusterSize-1], *j)); }
 	  // other nodes
 	  for (int i=1; i<clusterSize-1; i++)
 	    {
-	      distances(cluster[i], cluster[i+1]) = 0;
+	      distances(cluster[i], cluster[i+1]) = zero;
 	      for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
 		distances(cluster[i-1], *j) = int(factor*configDist(cluster[i], *j));
 	    }
 	}
       else if (clusterSize==2)
 	{
-	  distances(cluster[0], cluster[1]) = 0;
-	  distances(cluster[1], cluster[0]) = 0;
+	  distances(cluster[0], cluster[1]) = zero;
+	  distances(cluster[1], cluster[0]) = zero;
 	  for (std::vector<int>::iterator j=verticesToConsider.begin(); j!=verticesToConsider.end(); j++)
 	    { distances(cluster[0], *j) = int(factor*configDist(cluster[1], *j));
 	      distances(cluster[1], *j) = int(factor*configDist(cluster[0], *j)); }
