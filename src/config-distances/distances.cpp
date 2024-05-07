@@ -103,6 +103,46 @@ double distanceMatrix::configDist(int config1, int config2) const
   return res;
 }
 
+
+void distanceMatrix::generateGTSPtxtIntanceFile(const std::string& filename)
+{
+  const int factor = 10000;
+  std::ofstream file(filename);
+  // write number of vertices and number of clusters
+  file << "N: " << nbConfigs << std::endl ;
+  file << "M: " << nbClusters << std::endl ;
+  file << "Symmetric: false" << std::endl;
+  file << "Triangle: false" << std::endl;
+  std::set<int> allVertices;
+  for (int i=1; i<nbConfigs+1; i++)
+    allVertices.emplace(i);
+  for (int k=0; k<nbClusters; k++)
+  {
+     Eigen::VectorXi clus = _clusters.row(k); // retrieve the cluster from the matrix
+      std::set<int> clusterSet; // put it into a set
+      clusterSet.clear();
+      for (int i=0; i<clus.size(); i++)
+        clusterSet.insert(clus[i]);
+      clusterSet.erase(-1);
+      int clusterSize = int(clusterSet.size()); // get its size
+      file << clusterSize << " ";
+      for (std::set<int>::iterator j=clusterSet.begin(); j!=clusterSet.end(); j++)
+	      file << *j << " ";
+      file << std::endl;
+  }
+  for (std::set<int>::iterator i=allVertices.begin(); i!=allVertices.end(); i++)
+  {
+    for (std::set<int>::iterator j=allVertices.begin(); j!=allVertices.end(); j++)
+    {
+	if (*i == *j)
+		file << 0 << " ";
+        else
+	  file << int(factor*configDist(*i, *j)) << " ";
+    }
+    file << std::endl;
+  }
+}
+
 // Computes the distance matrix of the TSP model of our GTSP (a node per configuration)
 void distanceMatrix::computeDistances()
 {

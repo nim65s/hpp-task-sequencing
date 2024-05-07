@@ -180,7 +180,7 @@ void Tools::computeDistances(const hpp::floatSeqSeq& configs, const hpp::intSeqS
 			  hpp::corbaServer::floatSeqToVector(jointSpeeds),
 			  hpp::corbaServer::floatSeqToVector(q0));
     matrix.computeDistances();
-    matrix.writeMatrix("/home/hvanoverlo/devel/instanceData/matrix.txt");
+    matrix.generateGTSPtxtIntanceFile("./gtsp.txt");
     
     // Store the matrix in a sequence
     Eigen::MatrixXd distMat = matrix.getMatrix();

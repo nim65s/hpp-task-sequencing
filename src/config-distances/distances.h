@@ -33,6 +33,7 @@ class distanceMatrix
     k_config = 2.;
     k_base = 2.;}
   void computeDistances();
+  void generateGTSPtxtIntanceFile(const std::string& filename);
   double getDist(int i, int j) const;
   Eigen::MatrixXd getMatrix() const;
   void writeMatrix(std::string filePath) const;
