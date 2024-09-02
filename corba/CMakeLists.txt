@@ -27,7 +27,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 # DAMAGE.
 
-findpython()
 # hpp corba plugin
 include(${HPP_CORBASERVER_CMAKE_PLUGIN})
 include(${HPP_CORBASERVER_OMNIIDL_CMAKE})
@@ -35,7 +34,6 @@ omniidl_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/idl
                             ${HPP_CORBASERVER_DATAROOTDIR}/idl)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-findpython()
 set(IDL_SOURCES solver tools)
 foreach(IDL ${IDL_SOURCES})
   generate_idl_cpp(
